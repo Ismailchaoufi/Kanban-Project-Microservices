@@ -1,0 +1,28 @@
+package com.examlple.taskservice.dto;
+
+import com.examlple.taskservice.entity.Priority;
+import com.examlple.taskservice.entity.TaskStatus;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class TaskResponse {
+    private Long id;
+    private String title;
+    private String description;
+    private TaskStatus status;
+    private Priority priority;
+    private LocalDate dueDate;
+    private Long projectId;
+    private AssignedUserDTO assignedUser;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+}

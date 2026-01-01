@@ -1,0 +1,35 @@
+.task-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 0;
+  min-width: 500px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+}
+
+.half-width {
+  flex: 1;
+}
+
+mat-dialog-actions button mat-spinner {
+  display: inline-block;
+  margin-right: 8px;
+}
+
+@media (max-width: 600px) {
+  .task-form {
+    min-width: 100%;
+  }
+
+  .form-row {
+    flex-direction: column;
+  }
+}

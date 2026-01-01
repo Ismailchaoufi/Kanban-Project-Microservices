@@ -1,0 +1,54 @@
+.navbar {
+     position: fixed;
+     top: 0;
+     left: 0;
+     right: 0;
+     z-index: 1000;
+     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.menu-button {
+  margin-right: 16px;
+}
+
+.app-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.title-icon {
+  font-size: 28px;
+  width: 28px;
+  height: 28px;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.user-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.user-name {
+  margin: 0 4px;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .user-name {
+    display: none;
+  }
+
+  .app-title {
+    font-size: 16px;
+  }
+}

@@ -1,0 +1,169 @@
+<div class="dashboard-container" *ngIf="!loading">
+  <!-- Welcome Header -->
+  <div class="welcome-header">
+    <div>
+      <h1 class="page-title">Welcome back, {{ userName }}! 👋</h1>
+      <p class="page-subtitle">Here's what's happening with your projects today</p>
+    </div>
+    <button mat-raised-button color="primary" (click)="createNewProject()">
+      <mat-icon>add</mat-icon>
+      New Project
+    </button>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <!-- Total Projects -->
+    <mat-card class="stat-card stat-primary">
+      <div class="stat-icon">
+        <mat-icon>folder</mat-icon>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ totalProjects }}</h3>
+        <p class="stat-label">Total Projects</p>
+      </div>
+    </mat-card>
+
+    <!-- Total Tasks -->
+    <mat-card class="stat-card stat-info">
+      <div class="stat-icon">
+        <mat-icon>task</mat-icon>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ totalTasks }}</h3>
+        <p class="stat-label">Total Tasks</p>
+      </div>
+    </mat-card>
+
+    <!-- In Progress -->
+    <mat-card class="stat-card stat-warning">
+      <div class="stat-icon">
+        <mat-icon>hourglass_empty</mat-icon>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ inProgressTasks }}</h3>
+        <p class="stat-label">In Progress</p>
+      </div>
+    </mat-card>
+
+    <!-- Completed -->
+    <mat-card class="stat-card stat-success">
+      <div class="stat-icon">
+        <mat-icon>check_circle</mat-icon>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ doneTasks }}</h3>
+        <p class="stat-label">Completed</p>
+      </div>
+    </mat-card>
+  </div>
+
+  <!-- Main Content Grid -->
+  <div class="content-grid">
+    <!-- Recent Projects -->
+    <mat-card class="content-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>folder</mat-icon>
+          Recent Projects
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="projects-list" *ngIf="recentProjects.length > 0; else noProjects">
+          <div
+            *ngFor="let project of recentProjects"
+            class="project-item"
+            (click)="navigateToProject(project.id)">
+            <div class="project-info">
+              <h4 class="project-title">{{ project.title }}</h4>
+              <p class="project-desc">{{ project.description || 'No description' }}</p>
+            </div>
+            <mat-chip [class]="'status-chip status-' + project.status.toLowerCase()">
+              {{ project.status }}
+            </mat-chip>
+          </div>
+        </div>
+        <ng-template #noProjects>
+          <div class="empty-state">
+            <mat-icon>folder_open</mat-icon>
+            <p>No projects yet. Create your first project!</p>
+            <button mat-raised-button color="primary" (click)="createNewProject()">
+              Create Project
+            </button>
+          </div>
+        </ng-template>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Task Stats Chart -->
+    <mat-card class="content-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>pie_chart</mat-icon>
+          Task Distribution
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="chart-container" *ngIf="totalTasks > 0; else noTasks">
+          <canvas baseChart
+                  [data]="pieChartData"
+                  [type]="'pie'"
+                  [options]="pieChartOptions">
+          </canvas>
+          <div class="completion-badge">
+            <div class="completion-circle">
+              <span class="completion-value">{{ getCompletionPercentage() }}%</span>
+            </div>
+            <p class="completion-label">Completion Rate</p>
+          </div>
+        </div>
+        <ng-template #noTasks>
+          <div class="empty-state">
+            <mat-icon>assignment</mat-icon>
+            <p>No tasks yet</p>
+          </div>
+        </ng-template>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- My Tasks -->
+    <mat-card class="content-card full-width">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>assignment_ind</mat-icon>
+          My Tasks
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="tasks-list" *ngIf="myTasks.length > 0; else noMyTasks">
+          <div *ngFor="let task of myTasks" class="task-item">
+            <div class="task-status-indicator" [class]="'status-' + task.status.toLowerCase()"></div>
+            <div class="task-info">
+              <h4 class="task-title">{{ task.title }}</h4>
+              <p class="task-desc">{{ task.description || 'No description' }}</p>
+            </div>
+            <div class="task-meta">
+              <mat-chip [class]="'priority-chip priority-' + task.priority.toLowerCase()">
+                {{ task.priority }}
+              </mat-chip>
+              <mat-chip [class]="'status-chip status-' + task.status.toLowerCase()">
+                {{ task.status.replace('_', ' ') }}
+              </mat-chip>
+            </div>
+          </div>
+        </div>
+        <ng-template #noMyTasks>
+          <div class="empty-state">
+            <mat-icon>inbox</mat-icon>
+            <p>No tasks assigned to you</p>
+          </div>
+        </ng-template>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>
+
+<div class="loading-container" *ngIf="loading">
+  <mat-spinner diameter="50"></mat-spinner>
+  <p>Loading dashboard...</p>
+</div>

@@ -1,0 +1,33 @@
+<mat-card class="task-card">
+  <!-- Priority Badge -->
+  <div class="priority-badge" [style.background-color]="getPriorityColor()"></div>
+
+  <!-- Task Title -->
+  <h4 class="task-title">{{ task.title }}</h4>
+
+  <!-- Task Description -->
+  <p class="task-description" *ngIf="task.description">
+    {{ task.description }}
+  </p>
+
+  <!-- Task Meta -->
+  <div class="task-meta">
+    <!-- Due Date -->
+    <div class="due-date" *ngIf="task.dueDate" [class.overdue]="isOverdue()">
+      <mat-icon>schedule</mat-icon>
+      <span>{{ task.dueDate | date:'MMM dd' }}</span>
+    </div>
+
+    <!-- Assigned User -->
+    <div class="assigned-user" *ngIf="task.assignedUser">
+      <div class="user-avatar" [title]="task.assignedUser.firstName + ' ' + task.assignedUser.lastName">
+        {{ task.assignedUser.firstName.charAt(0) }}{{ task.assignedUser.lastName.charAt(0) }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Priority Chip -->
+  <mat-chip class="priority-chip" [style.background-color]="getPriorityColor()">
+    {{ task.priority }}
+  </mat-chip>
+</mat-card>

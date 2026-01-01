@@ -1,0 +1,30 @@
+<div class="projects-container">
+  <div class="header">
+    <h1>My Projects</h1>
+    <button mat-raised-button color="primary" (click)="createNewProject()">
+      <mat-icon>add</mat-icon>
+      New Project
+    </button>
+  </div>
+
+  <div class="projects-grid" *ngIf="!loading">
+    <mat-card
+      *ngFor="let project of projects"
+      class="project-card"
+      (click)="viewProject(project.id)">
+      <mat-card-header>
+        <mat-card-title>{{ project.title }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p>{{ project.description || 'No description' }}</p>
+        <mat-chip [class]="'status-' + project.status.toLowerCase()">
+          {{ project.status }}
+        </mat-chip>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <div class="loading" *ngIf="loading">
+    <mat-spinner></mat-spinner>
+  </div>
+</div>

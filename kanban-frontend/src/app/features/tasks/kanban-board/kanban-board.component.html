@@ -1,0 +1,60 @@
+<div class="kanban-board">
+  <div class="kanban-columns" *ngIf="!loading">
+
+    <div
+      *ngFor="let column of columns; let i = index"
+      class="kanban-column"
+      [style.border-top-color]="column.color">
+
+      <!-- Column Header -->
+      <div class="column-header">
+        <div class="column-title">
+          <div
+            class="column-indicator"
+            [style.background-color]="column.color">
+          </div>
+
+          <h3>{{ column.title }}</h3>
+          <span class="task-count">{{ column.tasks.length }}</span>
+        </div>
+
+        <button mat-icon-button (click)="createTask()" *ngIf="column.id === 'TODO'">
+          <mat-icon>add</mat-icon>
+        </button>
+      </div>
+
+      <!-- Tasks List -->
+      <div
+        cdkDropList
+        [id]="'cdk-drop-list-' + i"
+        [cdkDropListData]="column.tasks"
+        [cdkDropListConnectedTo]="getConnectedLists()"
+        (cdkDropListDropped)="drop($event, column.id)"
+        class="tasks-container">
+
+        <!-- Tasks -->
+        <div
+          *ngFor="let task of column.tasks"
+          cdkDrag>
+          <app-task-card
+            [task]="task"
+            (click)="onTaskClick(task)">
+          </app-task-card>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-column" *ngIf="column.tasks.length === 0">
+          <mat-icon>inbox</mat-icon>
+          <p>No tasks</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-state" *ngIf="loading">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Loading tasks...</p>
+  </div>
+</div>

@@ -1,0 +1,20 @@
+<div class="project-detail" *ngIf="!loading && project">
+  <!-- Project Header -->
+  <div class="project-header">
+    <div>
+      <h1>{{ project.title }}</h1>
+      <p>{{ project.description }}</p>
+    </div>
+    <mat-chip [class]="'status-' + project.status.toLowerCase()">
+      {{ project.status }}
+    </mat-chip>
+  </div>
+
+  <!-- Kanban Board -->
+  <app-kanban-board [projectId]="projectId"></app-kanban-board>
+</div>
+
+<div class="loading" *ngIf="loading">
+  <mat-spinner diameter="50"></mat-spinner>
+  <p>Loading project...</p>
+</div>

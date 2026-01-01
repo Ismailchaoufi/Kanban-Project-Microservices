@@ -1,0 +1,322 @@
+.dashboard-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.welcome-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.page-title {
+  font-size: 32px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 8px 0;
+}
+
+.page-subtitle {
+  font-size: 16px;
+  color: #666;
+  margin: 0;
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border-radius: 12px;
+  transition: transform 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+}
+
+.stat-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-icon mat-icon {
+  font-size: 32px;
+  width: 32px;
+  height: 32px;
+  color: white;
+}
+
+.stat-primary .stat-icon {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-info .stat-icon {
+  background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+}
+
+.stat-warning .stat-icon {
+  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+}
+
+.stat-success .stat-icon {
+  background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #666;
+  margin: 4px 0 0 0;
+}
+
+/* Content Grid */
+.content-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.content-card {
+  border-radius: 12px;
+}
+
+.content-card.full-width {
+  grid-column: 1 / -1;
+}
+
+mat-card-header {
+  margin-bottom: 20px;
+}
+
+mat-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* Projects List */
+.projects-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.project-item {
+  padding: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.project-item:hover {
+  border-color: #1976d2;
+  background-color: #f5f5f5;
+}
+
+.project-title {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0 0 4px 0;
+}
+
+.project-desc {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+/* Tasks List */
+.tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.task-item {
+  padding: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.task-status-indicator {
+  width: 4px;
+  height: 48px;
+  border-radius: 2px;
+}
+
+.task-status-indicator.status-todo {
+  background-color: #ff9800;
+}
+
+.task-status-indicator.status-in_progress {
+  background-color: #2196f3;
+}
+
+.task-status-indicator.status-done {
+  background-color: #4caf50;
+}
+
+.task-info {
+  flex: 1;
+}
+
+.task-title {
+  font-size: 15px;
+  font-weight: 500;
+  margin: 0 0 4px 0;
+}
+
+.task-desc {
+  font-size: 13px;
+  color: #666;
+  margin: 0;
+}
+
+.task-meta {
+  display: flex;
+  gap: 8px;
+}
+
+/* Chips */
+.status-chip, .priority-chip {
+  font-size: 12px !important;
+  height: 24px !important;
+  padding: 0 8px !important;
+}
+
+.status-chip.status-in_progress {
+  background-color: #2196f3 !important;
+  color: white !important;
+}
+
+.status-chip.status-paused {
+  background-color: #ff9800 !important;
+  color: white !important;
+}
+
+.status-chip.status-completed {
+  background-color: #4caf50 !important;
+  color: white !important;
+}
+
+.priority-chip.priority-high {
+  background-color: #f44336 !important;
+  color: white !important;
+}
+
+.priority-chip.priority-medium {
+  background-color: #ff9800 !important;
+  color: white !important;
+}
+
+.priority-chip.priority-low {
+  background-color: #9e9e9e !important;
+  color: white !important;
+}
+
+/* Chart */
+.chart-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+
+.completion-badge {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.completion-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 8px;
+}
+
+.completion-value {
+  color: white;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.completion-label {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+}
+
+.empty-state mat-icon {
+  font-size: 64px;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+  color: #ccc;
+}
+
+.empty-state p {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+}
+
+/* Loading */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+}
+
+/* Responsive */
+@media (max-width: 968px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .welcome-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+}

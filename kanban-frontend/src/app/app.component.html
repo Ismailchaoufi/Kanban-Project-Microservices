@@ -1,0 +1,26 @@
+<div class="app-container">
+  <!-- Navbar -->
+  <app-navbar
+    *ngIf="isAuthenticated"
+    (toggleSidenav)="toggleSidenav()">
+  </app-navbar>
+
+  <!-- Main Layout -->
+  <mat-sidenav-container class="sidenav-container" [class.authenticated]="isAuthenticated">
+    <!-- Sidebar -->
+    <mat-sidenav
+      *ngIf="isAuthenticated"
+      mode="side"
+      [opened]="sidenavOpened"
+      class="sidenav">
+      <app-sidebar></app-sidebar>
+    </mat-sidenav>
+
+    <!-- Main Content -->
+    <mat-sidenav-content class="main-content">
+      <div class="content-wrapper">
+        <router-outlet></router-outlet>
+      </div>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+</div>

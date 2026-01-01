@@ -1,0 +1,102 @@
+<div class="task-detail-header">
+  <h2 mat-dialog-title>{{ data.task.title }}</h2>
+  <button mat-icon-button (click)="onClose()">
+    <mat-icon>close</mat-icon>
+  </button>
+</div>
+
+<mat-dialog-content>
+  <div class="task-detail-content">
+    <!-- Status and Priority Chips -->
+    <div class="chips-container">
+      <mat-chip [style.background-color]="getStatusColor()" class="status-chip">
+        {{ data.task.status.replace('_', ' ') }}
+      </mat-chip>
+      <mat-chip [style.background-color]="getPriorityColor()" class="priority-chip">
+        {{ data.task.priority }}
+      </mat-chip>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <!-- Description -->
+    <div class="detail-section">
+      <h3 class="section-title">
+        <mat-icon>description</mat-icon>
+        Description
+      </h3>
+      <p class="description-text">
+        {{ data.task.description || 'No description provided' }}
+      </p>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <!-- Details Grid -->
+    <div class="details-grid">
+      <!-- Assigned To -->
+      <div class="detail-item">
+        <div class="detail-label">
+          <mat-icon>person</mat-icon>
+          Assigned To
+        </div>
+        <div class="detail-value" *ngIf="data.task.assignedUser; else unassigned">
+          <div class="user-info">
+            <div class="user-avatar">
+              {{ data.task.assignedUser.firstName.charAt(0) }}{{ data.task.assignedUser.lastName.charAt(0) }}
+            </div>
+            <span>{{ data.task.assignedUser.firstName }} {{ data.task.assignedUser.lastName }}</span>
+          </div>
+        </div>
+        <ng-template #unassigned>
+          <div class="detail-value">Unassigned</div>
+        </ng-template>
+      </div>
+
+      <!-- Due Date -->
+      <div class="detail-item">
+        <div class="detail-label">
+          <mat-icon>event</mat-icon>
+          Due Date
+        </div>
+        <div class="detail-value" [class.overdue]="isOverdue()">
+          <mat-icon *ngIf="isOverdue()">warning</mat-icon>
+          {{ data.task.dueDate ? (data.task.dueDate | date:'MMM dd, yyyy') : 'No due date' }}
+        </div>
+      </div>
+
+      <!-- Created At -->
+      <div class="detail-item">
+        <div class="detail-label">
+          <mat-icon>schedule</mat-icon>
+          Created
+        </div>
+        <div class="detail-value">
+          {{ data.task.createdAt | date:'MMM dd, yyyy HH:mm' }}
+        </div>
+      </div>
+
+      <!-- Updated At -->
+      <div class="detail-item">
+        <div class="detail-label">
+          <mat-icon>update</mat-icon>
+          Last Updated
+        </div>
+        <div class="detail-value">
+          {{ data.task.updatedAt | date:'MMM dd, yyyy HH:mm' }}
+        </div>
+      </div>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button color="warn" (click)="onDelete()">
+    <mat-icon>delete</mat-icon>
+    Delete
+  </button>
+  <button mat-raised-button color="primary" (click)="onEdit()">
+    <mat-icon>edit</mat-icon>
+    Edit
+  </button>
+</mat-dialog-actions>

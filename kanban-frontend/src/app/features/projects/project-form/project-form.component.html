@@ -1,0 +1,83 @@
+<h2 mat-dialog-title>{{ isEditMode ? 'Edit Project' : 'Create New Project' }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="projectForm" class="project-form">
+    <!-- Title -->
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Project Title</mat-label>
+      <input matInput formControlName="title" placeholder="Enter project title">
+      <mat-error *ngIf="projectForm.get('title')?.hasError('required')">
+        Title is required
+      </mat-error>
+      <mat-error *ngIf="projectForm.get('title')?.hasError('minlength')">
+        Title must be at least 3 characters
+      </mat-error>
+    </mat-form-field>
+
+    <!-- Description -->
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Description</mat-label>
+      <textarea
+        matInput
+        formControlName="description"
+        placeholder="Enter project description"
+        rows="3">
+      </textarea>
+    </mat-form-field>
+
+    <!-- Status & Color Row -->
+    <div class="form-row">
+      <mat-form-field appearance="outline" class="half-width">
+        <mat-label>Status</mat-label>
+        <mat-select formControlName="status">
+          <mat-option *ngFor="let status of statusOptions" [value]="status.value">
+            {{ status.label }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="half-width">
+        <mat-label>Color</mat-label>
+        <mat-select formControlName="color">
+          <mat-option *ngFor="let color of colorOptions" [value]="color.value">
+            <div class="color-option">
+              <span class="color-circle" [style.background-color]="color.value"></span>
+              {{ color.label }}
+            </div>
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <!-- Dates Row -->
+    <div class="form-row">
+      <mat-form-field appearance="outline" class="half-width">
+        <mat-label>Start Date</mat-label>
+        <input matInput [matDatepicker]="startPicker" formControlName="startDate">
+        <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+        <mat-datepicker #startPicker></mat-datepicker>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="half-width">
+        <mat-label>End Date</mat-label>
+        <input matInput [matDatepicker]="endPicker" formControlName="endDate">
+        <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+        <mat-datepicker #endPicker></mat-datepicker>
+      </mat-form-field>
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()" [disabled]="loading">
+    Cancel
+  </button>
+  <button
+    mat-raised-button
+    color="primary"
+    (click)="onSubmit()"
+    [disabled]="loading || projectForm.invalid">
+    <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
+    <span *ngIf="!loading">{{ isEditMode ? 'Update' : 'Create' }}</span>
+  </button>
+</mat-dialog-actions>
