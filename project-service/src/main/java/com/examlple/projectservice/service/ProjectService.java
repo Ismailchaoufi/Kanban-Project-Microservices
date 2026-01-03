@@ -35,7 +35,12 @@ public class ProjectService {
 
 
 
-    @Transactional //cette methode est défini comme une transaction soit tout passé, soit tout annulé
+    /**
+     * Créer un nouveau projet
+     * - Le créateur devient automatiquement owner
+     * - Transaction : soit tout passe, soit tout est annulé
+     */
+    @Transactional
     public ProjectResponse createProject(ProjectRequest request, Long ownerId) {
         Project project = new Project();
         project.setTitle(request.getTitle());
@@ -49,30 +54,41 @@ public class ProjectService {
         Project savedProject = projectRepository.save(project);
 
         log.info("Project created successfully with ID: {}", savedProject.getId());
+        // Conversion entité → DTO pour la réponse
         return mapToProjectResponse(savedProject, ownerId, "USER");
     }
 
+    /**
+     * Récupérer tous les projets
+     * - ADMIN : voit tous les projets
+     * - USER  : voit seulement ses projets (owner ou membre)
+     */
     @Transactional(readOnly = true)
     public Page<ProjectResponse> getAllProjects(Long userId, String role, Pageable pageable) {
         Page<Project> projects;
 
         if ("ADMIN".equals(role)) {
-            // Admin can see all projects
+            // Admin : accès global
             projects = projectRepository.findAll(pageable);
         } else {
-            // User can only see projects where they are owner or member
+            // User : seulement les projets liés à lui
             projects = projectRepository.findByOwnerIdOrMemberId(userId, pageable);
         }
 
+        // Mapping vers DTO
         return projects.map(project -> mapToProjectResponse(project, userId, role));
     }
 
+    /**
+     * Récupérer un projet par ID
+     * - Vérifie si l'utilisateur a le droit d'accès (membre, owner ou admin)
+     */
     @Transactional(readOnly = true)
     public ProjectResponse getProjectById(Long projectId, Long userId, String role) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
-        // Check authorization
+        // Vérification des droits d’accès
         if (!canAccessProject(project, userId, role)) {
             throw new ForbiddenException("You don't have permission to access this project");
         }
@@ -80,17 +96,22 @@ public class ProjectService {
         return mapToProjectResponse(project, userId, role);
     }
 
+    /**
+     * Mettre à jour un projet
+     * - Seulement le owner ou ADMIN
+     * - Mise à jour partielle (PATCH-like)
+     */
     @Transactional
     public ProjectResponse updateProject(Long projectId, ProjectRequest request, Long userId, String role) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
-        // Only owner can update project
+        // Vérification des droits
         if (!project.getOwnerId().equals(userId) && !"ADMIN".equals(role)) {
             throw new ForbiddenException("Only the project owner can update the project");
         }
 
-        // Update fields
+        // Mise à jour uniquement des champs non nuls
         if (request.getTitle() != null) {
             project.setTitle(request.getTitle());
         }
@@ -116,6 +137,10 @@ public class ProjectService {
         return mapToProjectResponse(updatedProject, userId, role);
     }
 
+    /**
+     * Supprimer un projet
+     * - Seulement le owner ou ADMIN
+     */
     @Transactional
     public void deleteProject(Long projectId, Long userId, String role) {
         Project project = projectRepository.findById(projectId)
@@ -130,22 +155,27 @@ public class ProjectService {
         log.info("Project {} deleted successfully", projectId);
     }
 
+    /**
+     * Ajouter un membre à un projet
+     * - Seulement owner ou ADMIN
+     * - Vérifie si l'utilisateur existe via Auth Service
+     */
     @Transactional
     public MemberResponse addMember(Long projectId, AddMemberRequest request, Long requesterId, String role) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
-        // Only owner can add members
+
         if (!project.getOwnerId().equals(requesterId) && !"ADMIN".equals(role)) {
             throw new ForbiddenException("Only the project owner can add members");
         }
 
-        // Check if user is already a member
+        // Vérifie si l'utilisateur est déjà membre
         if (memberRepository.existsByProjectIdAndUserId(projectId, request.getUserId())) {
             throw new BadRequestException("User is already a member of this project");
         }
 
-        // Verify user exists via Auth Service
+        // Appel au Auth Service pour vérifier l'utilisateur
         UserDTO user;
         try {
             user = authServiceClient.getUserById(request.getUserId(), requesterId, role);
@@ -153,7 +183,7 @@ public class ProjectService {
             throw new BadRequestException("User not found");
         }
 
-        // Add member
+        // Création du membre
         ProjectMember member = new ProjectMember();
         member.setProject(project);
         member.setUserId(request.getUserId());
@@ -250,7 +280,9 @@ public class ProjectService {
                 .build();
     }
 
-    // Helper methods
+    /**
+     * Vérifie si un utilisateur peut accéder à un projet
+     */
     private boolean canAccessProject(Project project, Long userId, String role) {
         if ("ADMIN".equals(role)) {
             return true;

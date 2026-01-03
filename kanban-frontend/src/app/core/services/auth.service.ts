@@ -3,7 +3,15 @@ import {environment} from '../../../environments/environment';
 import {BehaviorSubject, Observable, tap} from 'rxjs';
 import {AuthResponse, LoginRequest, RegisterRequest, User} from '../models/user.model';
 import {Router} from '@angular/router';
-import {HttpClient} from '@angular/common/http';
+import {HttpClient, HttpParams} from '@angular/common/http';
+
+interface PageResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -60,6 +68,19 @@ export class AuthService {
   isAdmin(): boolean {
     const user = this.getCurrentUser();
     return user?.role === 'ADMIN';
+  }
+
+  getAllUsers(page: number = 0, size: number = 100): Observable<PageResponse<User>> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+
+    return this.http.get<PageResponse<User>>(`${environment.apiUrl}/users`, { params });
+  }
+
+  searchUsers(query: string): Observable<User[]> {
+    const params = new HttpParams().set('search', query);
+    return this.http.get<User[]>(`${environment.apiUrl}/users/search`, { params });
   }
 
   private handleAuthSuccess(response: AuthResponse): void {
