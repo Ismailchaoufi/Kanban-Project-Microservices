@@ -1,149 +1,97 @@
-<div class="project-detail" *ngIf="!loading && project">
-  <!-- Project Header -->
-  <div class="project-header">
-    <div class="header-content">
-      <h1>{{ project.title }}</h1>
-      <p>{{ project.description }}</p>
-    </div>
-    <div class="header-actions">
-      <mat-chip [class]="'status-' + project.status.toLowerCase()">
-        {{ project.status }}
-      </mat-chip>
-      <button mat-raised-button color="primary" (click)="toggleMembersPanel()" class="members-btn">
-        <mat-icon>group</mat-icon>
-        Members ({{ members.length }})
-      </button>
-    </div>
-  </div>
-
-  <!-- Members Panel (Slide-in) -->
-  <div class="members-panel" [class.show]="showMembersPanel">
-    <div class="panel-header">
-      <h2>
-        <mat-icon>group</mat-icon>
-        Project Members
-      </h2>
-      <button mat-icon-button (click)="toggleMembersPanel()" matTooltip="Close">
-        <mat-icon>close</mat-icon>
-      </button>
-    </div>
-
-    <div class="panel-content">
-      <!-- Add Member Button (Only for Owner) -->
-      <button 
-        *ngIf="isOwner()" 
-        mat-raised-button 
-        color="primary" 
-        (click)="openAddMemberModal()"
-        class="add-member-btn">
-        <mat-icon>person_add</mat-icon>
-        Add Member
-      </button>
-
-      <!-- Members List -->
-      <div class="members-list" *ngIf="!loadingMembers">
-        <mat-card *ngFor="let member of members" class="member-card">
-          <div class="member-info">
-            <div class="member-avatar" [style.background-color]="'#' + (member.userId * 123456).toString(16).slice(0, 6)">
-              {{ getMemberInitials(member) }}
-            </div>
-            <div class="member-details">
-              <h3>{{ member.firstName }} {{ member.lastName }}</h3>
-              <p class="member-email">{{ member.email }}</p>
-            </div>
-          </div>
-          <div class="member-actions">
-            <button 
-              *ngIf="isOwner() && member.userId !== project.ownerId"
-              mat-icon-button 
-              color="warn"
-              (click)="removeMember(member.userId, member.firstName + ' ' + member.lastName)"
-              matTooltip="Remove member">
-              <mat-icon>person_remove</mat-icon>
-            </button>
-            <mat-chip *ngIf="member.userId === project.ownerId" class="owner-badge">
-              Owner
-            </mat-chip>
-          </div>
-        </mat-card>
-
-        <div *ngIf="members.length === 0" class="empty-state">
-          <mat-icon>group_off</mat-icon>
-          <p>No members yet</p>
-        </div>
+<ng-container *ngIf="!loading && project; else loadingTemplate">
+  <div class="project-detail">
+    <!-- Project Header -->
+    <header class="project-header">
+      <div class="header-content">
+        <h1>{{ project.title }}</h1>
+        <p class="project-description">{{ project.description }}</p>
       </div>
-
-      <!-- Loading Members -->
-      <div *ngIf="loadingMembers" class="loading-members">
-        <mat-spinner diameter="40"></mat-spinner>
-        <p>Loading members...</p>
+      <div class="header-actions">
+        <mat-chip
+          [class]="'status-chip status-' + project.status.toLowerCase()"
+          [attr.aria-label]="'Project status: ' + project.status">
+          {{ project.status | titlecase }}
+        </mat-chip>
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="toggleMembersPanel()"
+          class="members-btn"
+          [attr.aria-label]="'View ' + members.length + ' project members'">
+          <mat-icon>group</mat-icon>
+          <span>Members ({{ members.length }})</span>
+        </button>
       </div>
-    </div>
-  </div>
+    </header>
 
-  <!-- Overlay -->
-  <div class="overlay" *ngIf="showMembersPanel || showAddMemberModal" (click)="showMembersPanel ? toggleMembersPanel() : closeAddMemberModal()"></div>
-
-  <!-- Add Member Modal -->
-  <div class="add-member-modal" *ngIf="showAddMemberModal">
-    <div class="modal-content">
-      <div class="modal-header">
+    <!-- Members Panel (Slide-in) -->
+    <aside
+      class="members-panel"
+      [class.show]="showMembersPanel"
+      role="complementary"
+      [attr.aria-hidden]="!showMembersPanel">
+      <div class="panel-header">
         <h2>
-          <mat-icon>person_add</mat-icon>
-          Add Member to Project
+          <mat-icon aria-hidden="true">group</mat-icon>
+          <span>Project Members</span>
         </h2>
-        <button mat-icon-button (click)="closeAddMemberModal()">
+        <button
+          mat-icon-button
+          (click)="toggleMembersPanel()"
+          matTooltip="Close panel"
+          aria-label="Close members panel">
           <mat-icon>close</mat-icon>
         </button>
       </div>
 
-      <div class="modal-body">
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Select User</mat-label>
-          <mat-select [(ngModel)]="selectedUserId" [disabled]="loadingUsers">
-            <mat-option *ngFor="let user of allUsers" [value]="user.id">
-              <div class="user-option">
-                <div class="user-avatar-small" [style.background-color]="'#' + (user.id * 123456).toString(16).slice(0, 6)">
-                  {{ getUserInitials(user) }}
-                </div>
-                <div class="user-info-small">
-                  <span class="user-name">{{ user.firstName }} {{ user.lastName }}</span>
-                  <span class="user-email-small">{{ user.email }}</span>
-                </div>
-              </div>
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <div *ngIf="loadingUsers" class="loading-users">
-          <mat-spinner diameter="30"></mat-spinner>
-          <p>Loading users...</p>
-        </div>
-
-        <div *ngIf="!loadingUsers && allUsers.length === 0" class="no-users">
-          <mat-icon>info</mat-icon>
-          <p>All users are already members of this project</p>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button mat-button (click)="closeAddMemberModal()">Cancel</button>
-        <button 
-          mat-raised-button 
-          color="primary" 
-          (click)="addMember()"
-          [disabled]="!selectedUserId || loadingUsers">
-          Add Member
+      <div class="panel-content">
+        <!-- Add Member Button (Only for Owner) -->
+        <button
+          *ngIf="isOwner()"
+          mat-raised-button
+          color="primary"
+          (click)="openAddMemberModal()"
+          class="add-member-btn"
+          aria-label="Add new member to project">
+          <mat-icon>person_add</mat-icon>
+          <span>Add Member</span>
         </button>
-      </div>
-    </div>
-  </div>
 
-  <!-- Kanban Board -->
-  <app-kanban-board [projectId]="projectId"></app-kanban-board>
-</div>
+        <!-- Loading Members -->
+        <div *ngIf="loadingMembers" class="loading-state">
+          <mat-spinner diameter="40" aria-label="Loading members"></mat-spinner>
+          <p>Loading members...</p>
+        </div>
 
-<div class="loading" *ngIf="loading">
-  <mat-spinner diameter="50"></mat-spinner>
-  <p>Loading project...</p>
-</div>
+        <!-- Members List -->
+        <div *ngIf="!loadingMembers && members.length > 0" class="members-list">
+          <mat-card
+            *ngFor="let member of members; trackBy: trackByUserId"
+            class="member-card">
+            <div class="member-info">
+              <div
+                class="member-avatar"
+                [style.background-color]="getAvatarColor(member.userId)"
+                [attr.aria-label]="'Avatar for ' + member.firstName + ' ' + member.lastName">
+                {{ getMemberInitials(member) }}
+              </div>
+              <div class="member-details">
+                <h3>{{ member.firstName }} {{ member.lastName }}</h3>
+                <p class="member-email">{{ member.email }}</p>
+              </div>
+            </div>
+            <div class="member-actions">
+              <button
+                *ngIf="isOwner() && member.userId !== project.ownerId"
+                mat-icon-button
+                color="warn"
+                (click)="removeMember(member.userId, member.firstName + ' ' + member.lastName)"
+                matTooltip="Remove member"
+                [attr.aria-label]="'Remove ' + member.firstName + ' ' + member.lastName + ' from project'">
+                <mat-icon>person_remove</mat-icon>
+              </button>
+              <mat-chip
+                *ngIf="member.userId === project.ownerId"
+                class="owner-badge"
+                aria-label="Project owner">
+                Owner

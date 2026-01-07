@@ -1,75 +1,112 @@
+/* ===================================
+   Main Layout
+   =================================== */
 .project-detail {
   max-width: 1600px;
   margin: 0 auto;
+  padding: 0 16px;
   position: relative;
 }
 
+/* ===================================
+   Project Header
+   =================================== */
 .project-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 24px;
   margin-bottom: 32px;
   padding: 24px;
   background: white;
   border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.3s ease;
+}
+
+.project-header:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .header-content {
   flex: 1;
+  min-width: 0; /* Prevent flex item overflow */
 }
 
 .project-header h1 {
-  font-size: 32px;
+  font-size: clamp(24px, 5vw, 32px);
   font-weight: 600;
   margin: 0 0 8px 0;
+  color: #1a1a1a;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.project-header p {
+.project-description {
   color: #666;
   margin: 0;
+  line-height: 1.5;
 }
 
 .header-actions {
   display: flex;
   gap: 16px;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .members-btn {
   display: flex;
   align-items: center;
   gap: 8px;
+  white-space: nowrap;
 }
 
-/* Status Chips */
-mat-chip.status-active {
+.members-btn mat-icon {
+  margin-right: 4px;
+}
+
+/* ===================================
+   Status Chips
+   =================================== */
+.status-chip {
+  font-weight: 500;
+  padding: 8px 16px !important;
+  font-size: 14px !important;
+}
+
+.status-chip.status-active {
   background-color: #4caf50 !important;
   color: white !important;
 }
 
-mat-chip.status-completed {
+.status-chip.status-completed {
   background-color: #2196f3 !important;
   color: white !important;
 }
 
-mat-chip.status-on_hold {
+.status-chip.status-on_hold {
   background-color: #ff9800 !important;
   color: white !important;
 }
 
-/* Members Panel */
+/* ===================================
+   Members Panel
+   =================================== */
 .members-panel {
   position: fixed;
-  right: -400px;
+  right: -420px;
   top: 0;
-  width: 400px;
+  width: 420px;
+  max-width: 100vw;
   height: 100vh;
   background: white;
-  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
-  transition: right 0.3s ease;
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.1);
+  transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1000;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .members-panel.show {
@@ -77,36 +114,48 @@ mat-chip.status-on_hold {
 }
 
 .panel-header {
+  position: sticky;
+  top: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 20px;
   border-bottom: 1px solid #e0e0e0;
-  background: #f5f5f5;
-  sticky: top;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
   z-index: 1;
 }
 
 .panel-header h2 {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   margin: 0;
   font-size: 20px;
   font-weight: 600;
 }
 
+.panel-header button {
+  color: white;
+}
+
 .panel-content {
   padding: 20px;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .add-member-btn {
   width: 100%;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   height: 48px;
   font-size: 16px;
+  font-weight: 500;
 }
 
+/* ===================================
+   Members List
+   =================================== */
 .members-list {
   display: flex;
   flex-direction: column;
@@ -118,12 +167,15 @@ mat-chip.status-on_hold {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: all 0.2s ease;
+  cursor: default;
+  border-left: 3px solid transparent;
 }
 
 .member-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-left-color: #667eea;
 }
 
 .member-info {
@@ -131,6 +183,7 @@ mat-chip.status-on_hold {
   gap: 12px;
   align-items: center;
   flex: 1;
+  min-width: 0;
 }
 
 .member-avatar {
@@ -143,43 +196,52 @@ mat-chip.status-on_hold {
   font-weight: 600;
   font-size: 18px;
   color: white;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.member-details {
+  flex: 1;
+  min-width: 0;
 }
 
 .member-details h3 {
   margin: 0 0 4px 0;
   font-size: 16px;
   font-weight: 600;
+  color: #1a1a1a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .member-email {
-  margin: 0 0 8px 0;
+  margin: 0;
   font-size: 14px;
   color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .member-actions {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
 
-mat-chip.role-owner {
-  background-color: #673ab7 !important;
-  color: white !important;
-}
-
-mat-chip.role-member {
-  background-color: #9e9e9e !important;
-  color: white !important;
-}
-
-mat-chip.owner-badge {
-  background-color: #ffd700 !important;
-  color: #333 !important;
+.owner-badge {
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%) !important;
+  color: #1a1a1a !important;
   font-weight: 600;
+  padding: 6px 12px !important;
+  font-size: 12px !important;
 }
 
-/* Empty State */
+/* ===================================
+   Empty States
+   =================================== */
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -187,6 +249,7 @@ mat-chip.owner-badge {
   justify-content: center;
   padding: 48px 24px;
   color: #999;
+  text-align: center;
 }
 
 .empty-state mat-icon {
@@ -194,30 +257,45 @@ mat-chip.owner-badge {
   width: 64px;
   height: 64px;
   margin-bottom: 16px;
+  color: #ccc;
 }
 
 .empty-state p {
   font-size: 16px;
-  margin: 0;
+  margin: 8px 0 0 0;
 }
 
-/* Loading States */
-.loading-members,
-.loading-users {
+.empty-state-hint {
+  font-size: 14px !important;
+  color: #bbb !important;
+  margin-top: 8px !important;
+}
+
+/* ===================================
+   Loading States
+   =================================== */
+.loading-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 32px;
+  gap: 16px;
 }
 
-.loading-members p,
-.loading-users p {
-  margin-top: 12px;
+.loading-state p {
+  margin: 0;
   color: #666;
+  font-size: 14px;
 }
 
-/* Overlay */
+.main-loading {
+  min-height: 400px;
+}
+
+/* ===================================
+   Overlay
+   =================================== */
 .overlay {
   position: fixed;
   top: 0;
@@ -226,7 +304,9 @@ mat-chip.owner-badge {
   height: 100%;
   background: rgba(0, 0, 0, 0.5);
   z-index: 999;
-  animation: fadeIn 0.3s;
+  cursor: pointer;
+  animation: fadeIn 0.3s ease;
+  backdrop-filter: blur(2px);
 }
 
 @keyframes fadeIn {
@@ -238,7 +318,9 @@ mat-chip.owner-badge {
   }
 }
 
-/* Add Member Modal */
+/* ===================================
+   Add Member Modal
+   =================================== */
 .add-member-modal {
   position: fixed;
   top: 50%;
@@ -247,59 +329,77 @@ mat-chip.owner-badge {
   width: 90%;
   max-width: 500px;
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border-radius: 16px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
   z-index: 1001;
-  animation: slideUp 0.3s;
+  border: none;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.add-member-modal.show {
+  opacity: 1;
+  pointer-events: auto;
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes slideUp {
   from {
-    transform: translate(-50%, -40%);
-    opacity: 0;
+    transform: translate(-50%, -45%);
   }
   to {
     transform: translate(-50%, -50%);
-    opacity: 1;
   }
 }
 
 .modal-content {
   display: flex;
   flex-direction: column;
+  max-height: 90vh;
 }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px;
+  padding: 24px;
   border-bottom: 1px solid #e0e0e0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 16px 16px 0 0;
 }
 
 .modal-header h2 {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   margin: 0;
   font-size: 20px;
   font-weight: 600;
 }
 
+.modal-header button {
+  color: white;
+}
+
 .modal-body {
   padding: 24px;
   min-height: 150px;
+  overflow-y: auto;
 }
 
 .full-width {
   width: 100%;
 }
 
+/* User Selection Dropdown */
 .user-option {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 0;
+  padding: 8px 4px;
 }
 
 .user-avatar-small {
@@ -313,21 +413,32 @@ mat-chip.owner-badge {
   font-size: 14px;
   color: white;
   flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .user-info-small {
   display: flex;
   flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
 }
 
 .user-name {
   font-weight: 500;
   font-size: 14px;
+  color: #1a1a1a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .user-email-small {
   font-size: 12px;
   color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .no-users {
@@ -348,31 +459,37 @@ mat-chip.owner-badge {
   color: #999;
 }
 
+.no-users p {
+  margin: 0;
+  font-size: 14px;
+}
+
 .modal-footer {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
   padding: 16px 24px;
   border-top: 1px solid #e0e0e0;
+  background: #f9f9f9;
+  border-radius: 0 0 16px 16px;
 }
 
-/* Loading */
-.loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 400px;
+/* ===================================
+   Kanban Section
+   =================================== */
+.kanban-section {
+  margin-top: 24px;
 }
 
-.loading p {
-  margin-top: 16px;
-  color: #666;
-}
-
-/* Snackbar Styles (Global) */
+/* ===================================
+   Snackbar Styles (Global)
+   =================================== */
 ::ng-deep .snackbar-success {
   background-color: #4caf50 !important;
+  color: white !important;
+}
+
+::ng-deep .snackbar-success .mat-simple-snackbar-action {
   color: white !important;
 }
 
@@ -381,7 +498,22 @@ mat-chip.owner-badge {
   color: white !important;
 }
 
-/* Responsive Design */
+::ng-deep .snackbar-error .mat-simple-snackbar-action {
+  color: white !important;
+}
+
+/* ===================================
+   Accessibility & Focus States
+   =================================== */
+button:focus-visible,
+mat-chip:focus-visible {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}
+
+/* ===================================
+   Responsive Design
+   =================================== */
 @media (max-width: 768px) {
   .members-panel {
     width: 100%;
@@ -396,10 +528,101 @@ mat-chip.owner-badge {
 
   .header-actions {
     width: 100%;
-    justify-content: space-between;
+    flex-wrap: wrap;
   }
 
   .add-member-modal {
     width: 95%;
+    max-width: none;
   }
+
+  .modal-body {
+    padding: 16px;
+  }
+
+  .panel-content {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .project-header {
+    padding: 16px;
+  }
+
+  .project-header h1 {
+    font-size: 24px;
+  }
+
+  .member-card {
+    padding: 12px;
+  }
+
+  .member-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+
+  .members-btn span {
+    display: none;
+  }
+
+  .status-chip {
+    font-size: 12px !important;
+    padding: 6px 12px !important;
+  }
+}
+
+/* ===================================
+   Print Styles
+   =================================== */
+@media print {
+  .members-panel,
+  .overlay,
+  .add-member-modal,
+  .header-actions,
+  .member-actions {
+    display: none !important;
+  }
+}
+
+/* ===================================
+   Animations & Transitions
+   =================================== */
+* {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Smooth scrolling */
+.members-panel,
+.panel-content,
+.modal-body {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+.members-panel::-webkit-scrollbar,
+.panel-content::-webkit-scrollbar,
+.modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.members-panel::-webkit-scrollbar-track,
+.panel-content::-webkit-scrollbar-track,
+.modal-body::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.members-panel::-webkit-scrollbar-thumb,
+.panel-content::-webkit-scrollbar-thumb,
+.modal-body::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.members-panel::-webkit-scrollbar-thumb:hover,
+.panel-content::-webkit-scrollbar-thumb:hover,
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }

@@ -1,29 +1,35 @@
-import {Component, OnInit} from '@angular/core';
-import {KanbanBoardComponent} from '../../tasks/kanban-board/kanban-board.component';
-import {CommonModule} from '@angular/common';
-import {MatCardModule} from '@angular/material/card';
-import {MatChipsModule} from '@angular/material/chips';
-import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
-import {MatButtonModule} from '@angular/material/button';
-import {MatIconModule} from '@angular/material/icon';
-import {MatDialogModule, MatDialog} from '@angular/material/dialog';
-import {MatFormFieldModule} from '@angular/material/form-field';
-import {MatSelectModule} from '@angular/material/select';
-import {MatSnackBar, MatSnackBarModule} from '@angular/material/snack-bar';
-import {MatTooltipModule} from '@angular/material/tooltip';
-import {MatMenuModule} from '@angular/material/menu';
-import {FormsModule} from '@angular/forms';
-import {Project, Member} from '../../../core/models/project.model';
-import {User} from '../../../core/models/user.model';
-import {ActivatedRoute} from '@angular/router';
-import {ProjectService} from '../../../core/services/project.service';
-import {AuthService} from '../../../core/services/auth.service';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
+import { Subject, takeUntil, finalize, forkJoin, catchError, of } from 'rxjs';
+import { FormsModule } from '@angular/forms';
+
+// Angular Material Imports
+import { MatCardModule } from '@angular/material/card';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatDialogModule } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatMenuModule } from '@angular/material/menu';
+
+// Project Imports
+import { KanbanBoardComponent } from '../../tasks/kanban-board/kanban-board.component';
+import { Project, Member } from '../../../core/models/project.model';
+import { User } from '../../../core/models/user.model';
+import { ProjectService } from '../../../core/services/project.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-project-detail',
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     MatCardModule,
     MatChipsModule,
     MatProgressSpinnerModule,
@@ -35,146 +41,320 @@ import {AuthService} from '../../../core/services/auth.service';
     MatSnackBarModule,
     MatTooltipModule,
     MatMenuModule,
-    FormsModule,
     KanbanBoardComponent
   ],
   templateUrl: './project-detail.component.html',
   styleUrl: './project-detail.component.css'
 })
-export class ProjectDetailComponent implements OnInit {
+export class ProjectDetailComponent implements OnInit, OnDestroy {
+  // Core data properties
   projectId!: number;
   project?: Project;
-  loading = true;
   members: Member[] = [];
   allUsers: User[] = [];
-  showMembersPanel = false;
-  showAddMemberModal = false;
+  currentUserId: number | null = null;
   selectedUserId: number | null = null;
+
+  // UI state flags
+  loading = true;
   loadingMembers = false;
   loadingUsers = false;
-  currentUserId: number | null = null;
+  showMembersPanel = false;
+  showAddMemberModal = false;
+
+  // Cleanup subject for subscriptions
+  private readonly destroy$ = new Subject<void>();
 
   constructor(
-    private route: ActivatedRoute,
-    private projectService: ProjectService,
-    private authService: AuthService,
-    private snackBar: MatSnackBar
+    private readonly route: ActivatedRoute,
+    private readonly projectService: ProjectService,
+    private readonly authService: AuthService,
+    private readonly snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
+    this.initializeComponent();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  /**
+   * Initialize component by loading project ID and data
+   */
+  private initializeComponent(): void {
     this.projectId = Number(this.route.snapshot.paramMap.get('id'));
     this.currentUserId = this.authService.getCurrentUser()?.id || null;
-    this.loadProject();
-    this.loadMembers();
+
+    if (!this.projectId) {
+      this.handleError('Invalid project ID');
+      this.loading = false;
+      return;
+    }
+
+    this.loadInitialData();
   }
 
-  loadProject(): void {
-    this.projectService.getProjectById(this.projectId).subscribe({
-      next: (project) => {
-        this.project = project;
-        this.loading = false;
-      },
-      error: () => {
-        this.loading = false;
-      }
-    });
+  /**
+   * Load project and members data in parallel for better performance
+   */
+  private loadInitialData(): void {
+    this.loading = true;
+
+    forkJoin({
+      project: this.projectService.getProjectById(this.projectId).pipe(
+        catchError(error => {
+          console.error('Error loading project:', error);
+          return of(null);
+        })
+      ),
+      members: this.projectService.getMembers(this.projectId).pipe(
+        catchError(error => {
+          console.error('Error loading members:', error);
+          return of([]);
+        })
+      )
+    })
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.loading = false)
+      )
+      .subscribe({
+        next: ({ project, members }) => {
+          if (project) {
+            this.project = project;
+            this.members = members;
+          } else {
+            this.handleError('Project not found');
+          }
+        },
+        error: (error) => this.handleError('Failed to load project data', error)
+      });
   }
 
+  /**
+   * Reload members list
+   */
   loadMembers(): void {
     this.loadingMembers = true;
-    this.projectService.getMembers(this.projectId).subscribe({
-      next: (members) => {
-        this.members = members;
-        this.loadingMembers = false;
-      },
-      error: () => {
-        this.loadingMembers = false;
-        this.showSnackBar('Failed to load members', 'error');
-      }
-    });
+
+    this.projectService.getMembers(this.projectId)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.loadingMembers = false)
+      )
+      .subscribe({
+        next: (members) => {
+          this.members = members;
+        },
+        error: (error) => {
+          this.handleError('Failed to load members', error);
+        }
+      });
   }
 
-  loadAllUsers(): void {
+  /**
+   * Load all available users excluding current members
+   */
+  private loadAllUsers(): void {
     this.loadingUsers = true;
-    this.authService.getAllUsers().subscribe({
-      next: (response) => {
-        // Filter out users who are already members
-        const memberUserIds = new Set(this.members.map(m => m.userId));
-        this.allUsers = response.content.filter(user => !memberUserIds.has(user.id));
-        this.loadingUsers = false;
-      },
-      error: () => {
-        this.loadingUsers = false;
-        this.showSnackBar('Failed to load users', 'error');
-      }
-    });
+
+    this.authService.getAllUsers()
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.loadingUsers = false)
+      )
+      .subscribe({
+        next: (response) => {
+          const memberUserIds = new Set(this.members.map(m => m.userId));
+          this.allUsers = response.content.filter(user => !memberUserIds.has(user.id));
+        },
+        error: (error) => {
+          this.handleError('Failed to load users', error);
+        }
+      });
   }
 
+  /**
+   * Toggle members panel visibility
+   */
   toggleMembersPanel(): void {
     this.showMembersPanel = !this.showMembersPanel;
+
+    // Close add member modal if open
+    if (this.showAddMemberModal) {
+      this.closeAddMemberModal();
+    }
   }
 
+  /**
+   * Open the add member modal
+   */
   openAddMemberModal(): void {
-    this.loadAllUsers();
     this.showAddMemberModal = true;
     this.selectedUserId = null;
+    this.loadAllUsers();
   }
 
+  /**
+   * Close the add member modal
+   */
   closeAddMemberModal(): void {
     this.showAddMemberModal = false;
     this.selectedUserId = null;
+    this.allUsers = [];
   }
 
+  /**
+   * Add a new member to the project
+   */
   addMember(): void {
     if (!this.selectedUserId) {
       this.showSnackBar('Please select a user', 'error');
       return;
     }
 
-    this.projectService.addMember(this.projectId, this.selectedUserId).subscribe({
-      next: (member) => {
-        this.members.push(member);
-        this.closeAddMemberModal();
-        this.showSnackBar('Member added successfully', 'success');
-      },
-      error: (error) => {
-        this.showSnackBar(error.error?.message || 'Failed to add member', 'error');
-      }
-    });
-  }
+    if (!this.validateMemberSelection(this.selectedUserId)) {
+      return;
+    }
 
-  removeMember(userId: number, memberName: string): void {
-    if (confirm(`Are you sure you want to remove ${memberName} from this project?`)) {
-      this.projectService.removeMember(this.projectId, userId).subscribe({
-        next: () => {
-          this.members = this.members.filter(m => m.userId !== userId);
-          this.showSnackBar('Member removed successfully', 'success');
+    this.loadingUsers = true;
+
+    this.projectService.addMember(this.projectId, this.selectedUserId)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.loadingUsers = false)
+      )
+      .subscribe({
+        next: (member) => {
+          this.members = [...this.members, member];
+          this.closeAddMemberModal();
+          this.showSnackBar('Member added successfully', 'success');
         },
         error: (error) => {
-          this.showSnackBar(error.error?.message || 'Failed to remove member', 'error');
+          const message = error.error?.message || 'Failed to add member';
+          this.handleError(message, error);
         }
       });
-    }
   }
 
+  /**
+   * Remove a member from the project
+   */
+  removeMember(userId: number, memberName: string): void {
+    if (!this.confirmAction(`Are you sure you want to remove ${memberName} from this project?`)) {
+      return;
+    }
+
+    this.projectService.removeMember(this.projectId, userId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.members = this.members.filter(m => m.userId !== userId);
+          this.showSnackBar(`${memberName} removed successfully`, 'success');
+        },
+        error: (error) => {
+          const message = error.error?.message || 'Failed to remove member';
+          this.handleError(message, error);
+        }
+      });
+  }
+
+  /**
+   * Check if current user is the project owner
+   */
   isOwner(): boolean {
     return this.project?.ownerId === this.currentUserId;
   }
 
+  /**
+   * Get member initials for avatar display
+   */
   getMemberInitials(member: Member): string {
-    return `${member.firstName.charAt(0)}${member.lastName.charAt(0)}`.toUpperCase();
+    return this.getInitials(member.firstName, member.lastName);
   }
 
+  /**
+   * Get user initials for avatar display
+   */
   getUserInitials(user: User): string {
-    return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+    return this.getInitials(user.firstName, user.lastName);
   }
 
+  /**
+   * Generate initials from first and last name
+   */
+  private getInitials(firstName: string, lastName: string): string {
+    const first = firstName?.charAt(0)?.toUpperCase() || '';
+    const last = lastName?.charAt(0)?.toUpperCase() || '';
+    return `${first}${last}`;
+  }
+
+  /**
+   * Generate consistent avatar color based on user ID
+   */
+  getAvatarColor(userId: number): string {
+    const colors = [
+      '#1976d2', '#388e3c', '#d32f2f', '#7b1fa2',
+      '#f57c00', '#0097a7', '#c2185b', '#5d4037',
+      '#455a64', '#e64a19'
+    ];
+    return colors[userId % colors.length];
+  }
+
+  /**
+   * TrackBy function for ngFor optimization
+   */
+  trackByUserId(index: number, member: Member): number {
+    return member.userId;
+  }
+
+  /**
+   * TrackBy function for users list
+   */
+  trackByUserIdFn(index: number, user: User): number {
+    return user.id;
+  }
+
+  /**
+   * Validate member selection before adding
+   */
+  private validateMemberSelection(userId: number): boolean {
+    if (this.members.some(m => m.userId === userId)) {
+      this.showSnackBar('This user is already a member', 'error');
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Show confirmation dialog
+   */
+  private confirmAction(message: string): boolean {
+    return confirm(message);
+  }
+
+  /**
+   * Display snackbar message
+   */
   private showSnackBar(message: string, type: 'success' | 'error'): void {
     this.snackBar.open(message, 'Close', {
-      duration: 3000,
+      duration: type === 'success' ? 3000 : 5000,
       panelClass: type === 'success' ? 'snackbar-success' : 'snackbar-error',
       horizontalPosition: 'end',
       verticalPosition: 'top'
     });
+  }
+
+  /**
+   * Handle errors with logging and user notification
+   */
+  private handleError(message: string, error?: any): void {
+    if (error) {
+      console.error(message, error);
+    }
+    this.showSnackBar(message, 'error');
   }
 }
