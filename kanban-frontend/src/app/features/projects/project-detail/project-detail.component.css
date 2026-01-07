@@ -332,8 +332,6 @@
   border-radius: 16px;
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
   z-index: 1001;
-  border: none;
-  padding: 0;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease, transform 0.3s ease;
@@ -572,6 +570,18 @@ mat-chip:focus-visible {
     font-size: 12px !important;
     padding: 6px 12px !important;
   }
+
+  .panel-header {
+    padding: 16px;
+  }
+
+  .modal-header {
+    padding: 16px;
+  }
+
+  .modal-header h2 {
+    font-size: 18px;
+  }
 }
 
 /* ===================================
@@ -584,6 +594,15 @@ mat-chip:focus-visible {
   .header-actions,
   .member-actions {
     display: none !important;
+  }
+
+  .project-header {
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
+
+  .member-card {
+    page-break-inside: avoid;
   }
 }
 
@@ -625,4 +644,74 @@ mat-chip:focus-visible {
 .panel-content::-webkit-scrollbar-thumb:hover,
 .modal-body::-webkit-scrollbar-thumb:hover {
   background: #555;
+}
+
+/* ===================================
+   Loading Animation Enhancement
+   =================================== */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ===================================
+   Hover Effects Enhancement
+   =================================== */
+button:not(:disabled):hover {
+  transform: translateY(-1px);
+  transition: transform 0.2s ease;
+}
+
+button:not(:disabled):active {
+  transform: translateY(0);
+}
+
+/* ===================================
+   Dark Mode Support (Optional)
+   =================================== */
+@media (prefers-color-scheme: dark) {
+  .project-detail {
+    color: #e0e0e0;
+  }
+
+  .project-header {
+    background: #1e1e1e;
+    color: #e0e0e0;
+  }
+
+  .project-header h1 {
+    color: #ffffff;
+  }
+
+  .project-description {
+    color: #b0b0b0;
+  }
+
+  .members-panel {
+    background: #1e1e1e;
+  }
+
+  .member-card {
+    background: #2a2a2a;
+  }
+
+  .member-details h3 {
+    color: #ffffff;
+  }
+
+  .member-email {
+    color: #b0b0b0;
+  }
+
+  .add-member-modal .modal-content {
+    background: #1e1e1e;
+  }
+
+  .modal-body {
+    background: #1e1e1e;
+  }
+
+  .modal-footer {
+    background: #2a2a2a;
+  }
 }

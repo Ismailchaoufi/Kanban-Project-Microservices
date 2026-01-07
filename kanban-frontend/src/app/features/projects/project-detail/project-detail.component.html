@@ -95,3 +95,122 @@
                 class="owner-badge"
                 aria-label="Project owner">
                 Owner
+              </mat-chip>
+            </div>
+          </mat-card>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="!loadingMembers && members.length === 0" class="empty-state">
+          <mat-icon aria-hidden="true">group_off</mat-icon>
+          <p>No members in this project yet</p>
+          <p class="empty-state-hint" *ngIf="isOwner()">Click "Add Member" to invite team members</p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Overlay -->
+    <div
+      class="overlay"
+      *ngIf="showMembersPanel || showAddMemberModal"
+      (click)="showMembersPanel ? toggleMembersPanel() : closeAddMemberModal()"
+      role="presentation"
+      aria-hidden="true">
+    </div>
+
+    <!-- Add Member Modal -->
+    <div
+      class="add-member-modal"
+      [class.show]="showAddMemberModal"
+      role="dialog"
+      aria-labelledby="modal-title"
+      [attr.aria-hidden]="!showAddMemberModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="modal-title">
+            <mat-icon aria-hidden="true">person_add</mat-icon>
+            <span>Add Member to Project</span>
+          </h2>
+          <button
+            mat-icon-button
+            (click)="closeAddMemberModal()"
+            aria-label="Close modal">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <!-- Loading Users -->
+          <div *ngIf="loadingUsers" class="loading-state">
+            <mat-spinner diameter="30" aria-label="Loading users"></mat-spinner>
+            <p>Loading available users...</p>
+          </div>
+
+          <!-- User Selection -->
+          <mat-form-field
+            *ngIf="!loadingUsers && allUsers.length > 0"
+            appearance="outline"
+            class="full-width">
+            <mat-label>Select User</mat-label>
+            <mat-select
+              [(ngModel)]="selectedUserId"
+              aria-label="Select user to add">
+              <mat-option
+                *ngFor="let user of allUsers; trackBy: trackByUserIdFn"
+                [value]="user.id">
+                <div class="user-option">
+                  <div
+                    class="user-avatar-small"
+                    [style.background-color]="getAvatarColor(user.id)"
+                    [attr.aria-label]="'Avatar for ' + user.firstName + ' ' + user.lastName">
+                    {{ getUserInitials(user) }}
+                  </div>
+                  <div class="user-info-small">
+                    <span class="user-name">{{ user.firstName }} {{ user.lastName }}</span>
+                    <span class="user-email-small">{{ user.email }}</span>
+                  </div>
+                </div>
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- No Users Available -->
+          <div *ngIf="!loadingUsers && allUsers.length === 0" class="no-users">
+            <mat-icon aria-hidden="true">info</mat-icon>
+            <p>All users are already members of this project</p>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button
+            mat-button
+            (click)="closeAddMemberModal()"
+            type="button">
+            Cancel
+          </button>
+          <button
+            mat-raised-button
+            color="primary"
+            (click)="addMember()"
+            [disabled]="!selectedUserId || loadingUsers"
+            type="button">
+            Add Member
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Kanban Board -->
+    <section class="kanban-section" aria-label="Project tasks board">
+      <app-kanban-board [projectId]="projectId"></app-kanban-board>
+    </section>
+  </div>
+</ng-container>
+
+<!-- Loading Template -->
+<ng-template #loadingTemplate>
+  <div class="loading-state main-loading">
+    <mat-spinner diameter="50" aria-label="Loading project"></mat-spinner>
+    <p>Loading project details...</p>
+  </div>
+</ng-template>
