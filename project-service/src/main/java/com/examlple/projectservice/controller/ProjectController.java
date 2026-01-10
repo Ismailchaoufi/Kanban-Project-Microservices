@@ -1,6 +1,7 @@
 package com.examlple.projectservice.controller;
 
 import com.examlple.projectservice.dto.*;
+import com.examlple.projectservice.service.InvitationService;
 import com.examlple.projectservice.service.ProjectService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import java.util.List;
 public class ProjectController {
 
     private final ProjectService projectService;
+    private final InvitationService invitationService;
 
     @PostMapping
     public ResponseEntity<ProjectResponse> createProject(
@@ -100,5 +102,24 @@ public class ProjectController {
             @RequestHeader("X-User-Role") String role) {
         ProjectStatsResponse stats = projectService.getProjectStats(id, userId, role);
         return ResponseEntity.ok(stats);
+    }
+
+    @PostMapping("/{projectId}/invite")
+    public ResponseEntity<InvitationResponse> inviteMember(
+            @PathVariable Long projectId,
+            @Valid @RequestBody InvitationRequest request,
+            @RequestHeader("X-User-Id") Long userId
+    ) {
+        InvitationResponse response = invitationService.inviteMember(projectId, request, userId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/invitations/accept")
+    public ResponseEntity<Void> acceptInvitation(
+            @RequestParam String token,
+            @RequestHeader("X-User-Id") Long userId
+    ) {
+        invitationService.acceptInvitation(token, userId);
+        return ResponseEntity.ok().build();
     }
 }
