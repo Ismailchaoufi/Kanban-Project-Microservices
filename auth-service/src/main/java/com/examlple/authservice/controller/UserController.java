@@ -4,6 +4,7 @@ import com.examlple.authservice.dto.ChangePasswordRequest;
 import com.examlple.authservice.dto.UpdateUserRequest;
 import com.examlple.authservice.dto.UserResponse;
 import com.examlple.authservice.entity.Role;
+import com.examlple.authservice.entity.User;
 import com.examlple.authservice.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,15 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
 
+    /**
+     * Endpoint interne pour les microservices
+     * NE PAS exposer via API Gateway
+     */
+    @GetMapping("/internal/{userId}")
+    public ResponseEntity<UserResponse> getUserByIdInternal(@PathVariable Long userId) {
+        UserResponse user = userService.getUserByIdInternal(userId);
+        return ResponseEntity.ok(user);
+    }
     @PutMapping("/{id}")
     public ResponseEntity<UserResponse> updateUser(
             @PathVariable Long id,

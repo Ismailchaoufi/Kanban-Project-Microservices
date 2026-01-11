@@ -104,22 +104,48 @@ public class ProjectController {
         return ResponseEntity.ok(stats);
     }
 
+    /**
+     * Inviter un membre (OWNER ou ADMIN uniquement)
+     */
     @PostMapping("/{projectId}/invite")
     public ResponseEntity<InvitationResponse> inviteMember(
             @PathVariable Long projectId,
             @Valid @RequestBody InvitationRequest request,
-            @RequestHeader("X-User-Id") Long userId
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestHeader("X-User-Role") String role
     ) {
-        InvitationResponse response = invitationService.inviteMember(projectId, request, userId);
+        InvitationResponse response = invitationService.inviteMember(
+                projectId,
+                request,
+                userId,
+                role  // 🔑 Passer le rôle pour vérification
+        );
+
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Accepter une invitation (accessible à tous les utilisateurs authentifiés)
+     */
     @PostMapping("/invitations/accept")
-    public ResponseEntity<Void> acceptInvitation(
+    public ResponseEntity<String> acceptInvitation(
             @RequestParam String token,
             @RequestHeader("X-User-Id") Long userId
     ) {
         invitationService.acceptInvitation(token, userId);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok("Invitation accepted successfully");
     }
+
+//    /**
+//     * Annuler une invitation (OWNER ou ADMIN uniquement)
+//     */
+//    @DeleteMapping("/invitations/{invitationId}")
+//    public ResponseEntity<Void> cancelInvitation(
+//            @PathVariable Long invitationId,
+//            @RequestHeader("X-User-Id") Long userId,
+//            @RequestHeader("X-User-Role") String role
+//    ) {
+//        invitationService.cancelInvitation(invitationId, userId, role);
+//        return ResponseEntity.noContent().build();
+//    }
 }

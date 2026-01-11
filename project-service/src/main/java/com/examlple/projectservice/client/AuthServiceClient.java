@@ -19,4 +19,10 @@ public interface AuthServiceClient {
 
     @GetMapping("/api/v1/users/by-email")
     UserDTO getUserByEmail(@RequestParam String email);
+
+    /**
+     * Endpoint interne (sans auth)
+     */
+    @GetMapping("/api/v1/users/internal/{userId}")
+    UserDTO getUserByIdInternal(@PathVariable Long userId);
 }

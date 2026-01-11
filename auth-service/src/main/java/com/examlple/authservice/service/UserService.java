@@ -35,6 +35,13 @@ public class UserService {
         return mapToUserResponse(user);
     }
 
+    public UserResponse getUserByIdInternal(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        return mapToUserResponse(user);
+    }
+
     @Transactional(readOnly = true)
     public Page<UserResponse> getAllUsers(String requesterRole, Pageable pageable) {
         // Only admins can view all users
@@ -149,4 +156,6 @@ public class UserService {
                 .createdAt(user.getCreatedAt())
                 .build();
     }
+
+
 }

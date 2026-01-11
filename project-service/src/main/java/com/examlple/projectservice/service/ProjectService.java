@@ -165,12 +165,18 @@ public class ProjectService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
+        //VÉRIFICATION DES PERMISSIONS
+        // Autoriser si :
+        // 1. Utilisateur est ADMIN (peut gérer tous les projets)
+        // 2. Utilisateur est le OWNER du projet
+        boolean isAdmin = "ADMIN".equals(role);
+        boolean isOwner = project.getOwnerId().equals(requesterId);
 
-        if (!project.getOwnerId().equals(requesterId) && !"ADMIN".equals(role)) {
-            throw new ForbiddenException("Only the project owner can add members");
+        if (!isAdmin && !isOwner) {
+            throw new ForbiddenException("Only the project owner or admin can add members");
         }
 
-        // Vérifie si l'utilisateur est déjà membre
+        // Vérifier si l'utilisateur est déjà membre
         if (memberRepository.existsByProjectIdAndUserId(projectId, request.getUserId())) {
             throw new BadRequestException("User is already a member of this project");
         }
@@ -189,7 +195,9 @@ public class ProjectService {
         member.setUserId(request.getUserId());
 
         ProjectMember savedMember = memberRepository.save(member);
-        log.info("User {} added to project {}", request.getUserId(), projectId);
+
+        log.info("User {} added to project {} by {} (role: {})",
+                request.getUserId(), projectId, requesterId, role);
 
         return mapToMemberResponse(savedMember, user);
     }
@@ -221,25 +229,65 @@ public class ProjectService {
     }
 
     @Transactional
-    public void removeMember(Long projectId, Long userIdToRemove, Long requesterId, String role) {
+    public void removeMember(Long projectId, Long memberId, Long requesterId, String role) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
-        // Only owner can remove members
-        if (!project.getOwnerId().equals(requesterId) && !"ADMIN".equals(role)) {
-            throw new ForbiddenException("Only the project owner can remove members");
+        //Permissions
+        boolean isAdmin = "ADMIN".equals(role);
+        boolean isOwner = project.getOwnerId().equals(requesterId);
+
+        if (!isAdmin && !isOwner) {
+            throw new ForbiddenException("Only the project owner or admin can remove members");
         }
 
-        // Owner cannot remove themselves
-        if (project.getOwnerId().equals(userIdToRemove)) {
-            throw new BadRequestException("Owner cannot be removed from the project");
+        //Le propriétaire ne peut pas se supprimer lui-même
+        if (memberId.equals(project.getOwnerId())) {
+            throw new BadRequestException("Cannot remove the project owner");
         }
 
-        ProjectMember member = memberRepository.findByProjectIdAndUserId(projectId, userIdToRemove)
-                .orElseThrow(() -> new ResourceNotFoundException("Member not found in this project"));
+        ProjectMember member = memberRepository.findByProjectIdAndUserId(projectId, memberId)
+                .orElseThrow(() -> new ResourceNotFoundException("Member not found"));
 
         memberRepository.delete(member);
-        log.info("User {} removed from project {}", userIdToRemove, projectId);
+
+        log.info("User {} removed from project {} by {} (role: {})",
+                memberId, projectId, requesterId, role);
+    }
+
+    /**
+     * Ajoute un membre via invitation (bypass les vérifications de permission)
+     * Cette méthode est INTERNE et ne doit être appelée que par InvitationService
+     */
+    @Transactional
+    protected MemberResponse addMemberFromInvitation(Long projectId, Long userId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
+
+        // Vérifie si l'utilisateur est déjà membre
+        if (memberRepository.existsByProjectIdAndUserId(projectId, userId)) {
+            throw new BadRequestException("User is already a member of this project");
+        }
+
+        // Récupérer les infos utilisateur depuis Auth Service
+        UserDTO user;
+        try {
+            // Utiliser un appel système (bypass les permissions)
+            user = authServiceClient.getUserByIdInternal(userId);
+        } catch (Exception e) {
+            throw new BadRequestException("User not found in the system");
+        }
+
+        // Créer le membre
+        ProjectMember member = new ProjectMember();
+        member.setProject(project);
+        member.setUserId(userId);
+
+        ProjectMember savedMember = memberRepository.save(member);
+
+        log.info("User {} added to project {} via invitation", userId, projectId);
+
+        return mapToMemberResponse(savedMember, user);
     }
 
     @Transactional(readOnly = true)
