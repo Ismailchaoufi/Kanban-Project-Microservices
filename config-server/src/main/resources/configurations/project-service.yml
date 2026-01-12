@@ -18,6 +18,22 @@ spring:
         format_sql: true
     database-platform: org.hibernate.dialect.PostgreSQLDialect
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: laravelinfo24@gmail.com
+    password: pzjn tyay oucb fjwm
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+app:
+  frontend:
+    url: http://localhost:4200
+
 eureka:
   client:
     service-url:
@@ -31,3 +47,5 @@ logging:
     com.examlple.projectservice: DEBUG
     org.springframework.web: DEBUG
     feign: DEBUG
+
+

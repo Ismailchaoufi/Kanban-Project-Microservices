@@ -90,4 +90,10 @@ public class UserController {
         userService.updateUserRole(id, newRole, role);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/by-email")
+    public ResponseEntity<UserResponse> getUserByEmail(@RequestParam String email) {
+        UserResponse user = userService.findByEmail(email);
+        return ResponseEntity.ok(user);
+    }
 }

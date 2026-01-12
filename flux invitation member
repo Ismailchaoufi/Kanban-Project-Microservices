@@ -1,0 +1,8 @@
+Flux :
+
+User clique "Invite" → Frontend appelle Project Service
+Project Service vérifie dans Auth Service si user existe
+Si OUI → Ajoute directement au projet
+Si NON → Crée invitation + Envoie email
+User clique lien dans email → Accepte invitation
+Project Service ajoute le membre

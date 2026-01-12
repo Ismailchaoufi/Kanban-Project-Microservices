@@ -9,6 +9,7 @@ import com.examlple.authservice.exception.BadRequestException;
 import com.examlple.authservice.exception.ForbiddenException;
 import com.examlple.authservice.exception.ResourceNotFoundException;
 import com.examlple.authservice.repository.UserRepository;
+import jakarta.ws.rs.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,6 +32,13 @@ public class UserService {
         if (!userId.equals(requesterId) && !Role.ADMIN.name().equals(requesterRole)) {
             throw new ForbiddenException("You don't have permission to view this user");
         }
+
+        return mapToUserResponse(user);
+    }
+
+    public UserResponse findByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
 
         return mapToUserResponse(user);
     }

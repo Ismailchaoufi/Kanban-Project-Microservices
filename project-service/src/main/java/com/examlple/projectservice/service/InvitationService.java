@@ -61,7 +61,7 @@ public class InvitationService {
 
             // Utilisateur existe → ajouter directement
             projectService.addMemberFromInvitation(projectId, user.getId());
-            emailService.sendDirectAddEmail(email, projectId);
+            emailService.sendDirectAddEmail(email, projectId, project.getTitle());
 
             return InvitationResponse.builder()
                     .email(email)
@@ -76,10 +76,12 @@ public class InvitationService {
                     .email(email)
                     .invitedBy(inviterId)
                     .token(UUID.randomUUID().toString())
+                    .status(InvitationStatus.PENDING)
+                    .expiresAt(LocalDateTime.now().plusDays(7))
                     .build();
 
             invitationRepository.save(invitation);
-            emailService.sendInvitationEmail(invitation);
+            emailService.sendInvitationEmail(invitation, project.getTitle());
 
             return InvitationResponse.builder()
                     .email(email)
