@@ -15,6 +15,9 @@ import {Router} from '@angular/router';
 import {Task} from '../../../core/models/task.model';
 import {ProjectFormComponent} from '../../projects/project-form/project-form.component';
 import {MatDialog} from '@angular/material/dialog';
+// import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
+//
+// Chart.register(ArcElement, Tooltip, Legend);
 
 @Component({
   selector: 'app-dashboard',

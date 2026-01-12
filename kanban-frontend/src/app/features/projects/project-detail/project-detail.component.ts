@@ -23,6 +23,7 @@ import { Project, Member } from '../../../core/models/project.model';
 import { User } from '../../../core/models/user.model';
 import { ProjectService } from '../../../core/services/project.service';
 import { AuthService } from '../../../core/services/auth.service';
+import {MatInputModule} from '@angular/material/input';
 
 @Component({
   selector: 'app-project-detail',
@@ -37,6 +38,7 @@ import { AuthService } from '../../../core/services/auth.service';
     MatIconModule,
     MatDialogModule,
     MatFormFieldModule,
+    MatInputModule,
     MatSelectModule,
     MatSnackBarModule,
     MatTooltipModule,
@@ -51,14 +53,13 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
   projectId!: number;
   project?: Project;
   members: Member[] = [];
-  allUsers: User[] = [];
   currentUserId: number | null = null;
-  selectedUserId: number | null = null;
+  inviteEmail: string = '';
+  inviting = false;
 
   // UI state flags
   loading = true;
   loadingMembers = false;
-  loadingUsers = false;
   showMembersPanel = false;
   showAddMemberModal = false;
 
@@ -80,6 +81,53 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
   }
+
+
+  inviteMember(): void {
+    if (!this.inviteEmail || !this.isValidEmail(this.inviteEmail)) {
+      this.showSnackBar('Please enter a valid email address', 'error');
+      return;
+    }
+
+    // Check if email already exists in current members
+    const emailExists = this.members.some(
+      member => member.email.toLowerCase() === this.inviteEmail.toLowerCase()
+    );
+
+    if (emailExists) {
+      this.showSnackBar('This user is already a member of the project', 'error');
+      return;
+    }
+
+    this.inviting = true;
+
+    this.projectService.inviteMember(this.projectId, this.inviteEmail)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.inviting = false)
+      )
+      .subscribe({
+        next: (response) => {
+          if (response.userExists) {
+            this.showSnackBar('User added successfully to the project', 'success');
+            this.loadMembers();
+          } else {
+            this.showSnackBar('Invitation email sent successfully', 'success');
+          }
+          this.closeAddMemberModal();
+        },
+        error: (error) => {
+          const message = error.error?.message || 'Failed to send invitation';
+          this.showSnackBar(message, 'error'); // <-- show error in UI
+        }
+      });
+  }
+
+  private isValidEmail(email: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+
 
   /**
    * Initialize component by loading project ID and data
@@ -155,27 +203,6 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
       });
   }
 
-  /**
-   * Load all available users excluding current members
-   */
-  private loadAllUsers(): void {
-    this.loadingUsers = true;
-
-    this.authService.getAllUsers()
-      .pipe(
-        takeUntil(this.destroy$),
-        finalize(() => this.loadingUsers = false)
-      )
-      .subscribe({
-        next: (response) => {
-          const memberUserIds = new Set(this.members.map(m => m.userId));
-          this.allUsers = response.content.filter(user => !memberUserIds.has(user.id));
-        },
-        error: (error) => {
-          this.handleError('Failed to load users', error);
-        }
-      });
-  }
 
   /**
    * Toggle members panel visibility
@@ -194,8 +221,7 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
    */
   openAddMemberModal(): void {
     this.showAddMemberModal = true;
-    this.selectedUserId = null;
-    this.loadAllUsers();
+    this.inviteEmail = '';
   }
 
   /**
@@ -203,41 +229,7 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
    */
   closeAddMemberModal(): void {
     this.showAddMemberModal = false;
-    this.selectedUserId = null;
-    this.allUsers = [];
-  }
-
-  /**
-   * Add a new member to the project
-   */
-  addMember(): void {
-    if (!this.selectedUserId) {
-      this.showSnackBar('Please select a user', 'error');
-      return;
-    }
-
-    if (!this.validateMemberSelection(this.selectedUserId)) {
-      return;
-    }
-
-    this.loadingUsers = true;
-
-    this.projectService.addMember(this.projectId, this.selectedUserId)
-      .pipe(
-        takeUntil(this.destroy$),
-        finalize(() => this.loadingUsers = false)
-      )
-      .subscribe({
-        next: (member) => {
-          this.members = [...this.members, member];
-          this.closeAddMemberModal();
-          this.showSnackBar('Member added successfully', 'success');
-        },
-        error: (error) => {
-          const message = error.error?.message || 'Failed to add member';
-          this.handleError(message, error);
-        }
-      });
+    this.inviteEmail = '';
   }
 
   /**
@@ -267,6 +259,11 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
    */
   isOwner(): boolean {
     return this.project?.ownerId === this.currentUserId;
+  }
+
+  isAdmin(): boolean {
+    const user = this.authService.getCurrentUser();
+    return user?.role === "ADMIN"; // adjust this according to your role logic
   }
 
   /**
@@ -319,17 +316,6 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Validate member selection before adding
-   */
-  private validateMemberSelection(userId: number): boolean {
-    if (this.members.some(m => m.userId === userId)) {
-      this.showSnackBar('This user is already a member', 'error');
-      return false;
-    }
-    return true;
-  }
-
-  /**
    * Show confirmation dialog
    */
   private confirmAction(message: string): boolean {
@@ -357,4 +343,6 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
     }
     this.showSnackBar(message, 'error');
   }
+
+
 }

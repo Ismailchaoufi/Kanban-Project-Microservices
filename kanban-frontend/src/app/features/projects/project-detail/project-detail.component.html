@@ -45,9 +45,9 @@
       </div>
 
       <div class="panel-content">
-        <!-- Add Member Button (Only for Owner) -->
+        <!-- Add Member Button (Only for Owner and Admin) -->
         <button
-          *ngIf="isOwner()"
+          *ngIf="isOwner() || isAdmin()"
           mat-raised-button
           color="primary"
           (click)="openAddMemberModal()"
@@ -125,80 +125,48 @@
       role="dialog"
       aria-labelledby="modal-title"
       [attr.aria-hidden]="!showAddMemberModal">
+
       <div class="modal-content">
         <div class="modal-header">
           <h2 id="modal-title">
-            <mat-icon aria-hidden="true">person_add</mat-icon>
-            <span>Add Member to Project</span>
+            <mat-icon>mail</mat-icon>
+            <span>Invite Member</span>
           </h2>
-          <button
-            mat-icon-button
-            (click)="closeAddMemberModal()"
-            aria-label="Close modal">
+          <button mat-icon-button (click)="closeAddMemberModal()">
             <mat-icon>close</mat-icon>
           </button>
         </div>
 
         <div class="modal-body">
-          <!-- Loading Users -->
-          <div *ngIf="loadingUsers" class="loading-state">
-            <mat-spinner diameter="30" aria-label="Loading users"></mat-spinner>
-            <p>Loading available users...</p>
-          </div>
-
-          <!-- User Selection -->
-          <mat-form-field
-            *ngIf="!loadingUsers && allUsers.length > 0"
-            appearance="outline"
-            class="full-width">
-            <mat-label>Select User</mat-label>
-            <mat-select
-              [(ngModel)]="selectedUserId"
-              aria-label="Select user to add">
-              <mat-option
-                *ngFor="let user of allUsers; trackBy: trackByUserIdFn"
-                [value]="user.id">
-                <div class="user-option">
-                  <div
-                    class="user-avatar-small"
-                    [style.background-color]="getAvatarColor(user.id)"
-                    [attr.aria-label]="'Avatar for ' + user.firstName + ' ' + user.lastName">
-                    {{ getUserInitials(user) }}
-                  </div>
-                  <div class="user-info-small">
-                    <span class="user-name">{{ user.firstName }} {{ user.lastName }}</span>
-                    <span class="user-email-small">{{ user.email }}</span>
-                  </div>
-                </div>
-              </mat-option>
-            </mat-select>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Email address</mat-label>
+            <input
+              matInput
+              type="email"
+              [(ngModel)]="inviteEmail"
+              placeholder="example@email.com"
+              required />
           </mat-form-field>
 
-          <!-- No Users Available -->
-          <div *ngIf="!loadingUsers && allUsers.length === 0" class="no-users">
-            <mat-icon aria-hidden="true">info</mat-icon>
-            <p>All users are already members of this project</p>
-          </div>
+          <p class="hint">
+            The user will be added automatically if they already exist,
+            otherwise an invitation email will be sent.
+          </p>
         </div>
 
         <div class="modal-footer">
-          <button
-            mat-button
-            (click)="closeAddMemberModal()"
-            type="button">
-            Cancel
-          </button>
+          <button mat-button (click)="closeAddMemberModal()">Cancel</button>
           <button
             mat-raised-button
             color="primary"
-            (click)="addMember()"
-            [disabled]="!selectedUserId || loadingUsers"
-            type="button">
-            Add Member
+            (click)="inviteMember()"
+            [disabled]="!inviteEmail || inviting">
+            Invite
           </button>
         </div>
       </div>
     </div>
+
 
     <!-- Kanban Board -->
     <section class="kanban-section" aria-label="Project tasks board">

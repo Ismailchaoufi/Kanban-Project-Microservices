@@ -80,6 +80,13 @@ export class ProjectService {
     return this.http.get<ProjectStats>(`${this.apiUrl}/${projectId}/stats`);
   }
 
+  inviteMember(projectId: number, email: string) {
+    return this.http.post<any>(
+      `${this.apiUrl}/${projectId}/invite`,
+      { email }
+    );
+  }
+
   private refreshProjects(): void {
     this.getAllProjects().subscribe();
   }
