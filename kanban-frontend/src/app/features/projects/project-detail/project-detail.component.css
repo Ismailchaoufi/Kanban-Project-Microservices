@@ -1,72 +1,92 @@
-/* ===================================
-   Variables CSS
-   =================================== */
+/* =========================================
+   DESIGN SYSTEM - CSS VARIABLES
+   ========================================= */
 :root {
-  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --success-color: #4caf50;
-  --error-color: #f44336;
-  --warning-color: #ff9800;
-  --info-color: #2196f3;
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.16);
-  --border-radius: 12px;
-  --transition-speed: 0.3s;
+  /* Primary Colors */
+  --primary: #6366f1;
+  --primary-dark: #4f46e5;
+  --primary-light: #818cf8;
+  --primary-lighter: #a5b4fc;
+
+  /* Semantic Colors */
+  --success: #10b981;
+  --success-light: #d1fae5;
+  --danger: #ef4444;
+  --danger-light: #fee2e2;
+  --warning: #f59e0b;
+  --warning-light: #fef3c7;
+  --info: #3b82f6;
+  --info-light: #dbeafe;
+
+  /* Grayscale */
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+
+  /* Border Radius */
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ===================================
-   Main Layout
-   =================================== */
+/* =========================================
+   RESET & BASE STYLES
+   ========================================= */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 .project-detail {
-  max-width: 1600px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 24px;
-  position: relative;
-  animation: fadeIn 0.4s ease-in-out;
+  padding: 32px;
+  background: var(--gray-50);
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* ===================================
-   Project Header - ENHANCED
-   =================================== */
+/* =========================================
+   PROJECT HEADER
+   ========================================= */
 .project-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  gap: 24px;
+  align-items: flex-start;
+  gap: 32px;
   margin-bottom: 32px;
   padding: 32px;
   background: white;
-  border-radius: var(--border-radius);
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-sm);
-  transition: all var(--transition-speed) ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.project-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 4px;
-  background: var(--primary-gradient);
+  border: 1px solid var(--gray-100);
+  transition: box-shadow var(--transition-base);
 }
 
 .project-header:hover {
   box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
 }
 
 .header-content {
@@ -75,19 +95,16 @@
 }
 
 .project-header h1 {
-  font-size: clamp(26px, 5vw, 36px);
+  font-size: 32px;
   font-weight: 700;
   margin: 0 0 12px 0;
-  color: #1a1a1a;
-  background: var(--primary-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--gray-900);
   line-height: 1.2;
+  letter-spacing: -0.02em;
 }
 
 .project-description {
-  color: #666;
+  color: var(--gray-600);
   margin: 0;
   line-height: 1.6;
   font-size: 15px;
@@ -100,70 +117,88 @@
   flex-shrink: 0;
 }
 
+/* =========================================
+   BUTTONS
+   ========================================= */
 .members-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  white-space: nowrap;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-weight: 500;
-  transition: all 0.2s ease;
+  padding: 12px 20px;
+  background: white;
+  color: var(--gray-700);
+  border: 1.5px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-base);
 }
 
 .members-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  background: var(--gray-50);
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
-/* ===================================
-   Status Chips - ENHANCED
-   =================================== */
+.members-btn:active {
+  transform: translateY(0);
+}
+
+.members-btn mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+/* =========================================
+   STATUS CHIPS
+   ========================================= */
 .status-chip {
-  font-weight: 600;
-  padding: 10px 20px !important;
-  font-size: 13px !important;
-  border-radius: 20px !important;
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  border-radius: var(--radius-md) !important;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s ease;
+  transition: all var(--transition-base);
 }
 
-.status-chip:hover {
-  transform: scale(1.05);
+.status-active {
+  background: var(--success-light) !important;
+  color: #065f46 !important;
+  border: 1.5px solid #6ee7b7 !important;
 }
 
-.status-chip.status-active {
-  background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%) !important;
-  color: white !important;
+.status-completed {
+  background: var(--info-light) !important;
+  color: #1e40af !important;
+  border: 1.5px solid #93c5fd !important;
 }
 
-.status-chip.status-completed {
-  background: linear-gradient(135deg, #2196f3 0%, #42a5f5 100%) !important;
-  color: white !important;
+.status-on-hold {
+  background: var(--warning-light) !important;
+  color: #92400e !important;
+  border: 1.5px solid #fcd34d !important;
 }
 
-.status-chip.status-on_hold {
-  background: linear-gradient(135deg, #ff9800 0%, #ffa726 100%) !important;
-  color: white !important;
-}
-
-/* ===================================
-   Members Panel - ENHANCED
-   =================================== */
+/* =========================================
+   MEMBERS PANEL (SIDEBAR)
+   ========================================= */
 .members-panel {
   position: fixed;
-  right: -450px;
+  right: -420px;
   top: 0;
-  width: 450px;
-  max-width: 100vw;
+  width: 420px;
   height: 100vh;
-  background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
-  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.15);
-  transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  background: white;
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.12);
+  transition: right var(--transition-slow);
   z-index: 1000;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
@@ -173,16 +208,12 @@
 }
 
 .panel-header {
-  position: sticky;
-  top: 0;
+  padding: 24px 28px;
+  border-bottom: 1px solid var(--gray-200);
+  background: linear-gradient(to bottom, white, var(--gray-50));
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24px;
-  background: var(--primary-gradient);
-  color: white;
-  z-index: 10;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .panel-header h2 {
@@ -190,111 +221,91 @@
   align-items: center;
   gap: 12px;
   margin: 0;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
-  letter-spacing: 0.5px;
+  color: var(--gray-900);
+  letter-spacing: -0.01em;
 }
 
 .panel-header button {
-  color: white;
-  transition: all 0.2s ease;
+  color: var(--gray-500);
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: var(--radius);
+  transition: all var(--transition-fast);
 }
 
 .panel-header button:hover {
-  transform: rotate(90deg);
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--gray-200);
+  color: var(--gray-700);
 }
 
 .panel-content {
-  padding: 24px;
+  padding: 28px;
   flex: 1;
   overflow-y: auto;
+  background: var(--gray-50);
 }
 
-/* ===================================
-   Add Member Button - ENHANCED
-   =================================== */
+/* =========================================
+   ADD MEMBER BUTTON
+   ========================================= */
 .add-member-btn {
   width: 100%;
+  height: 48px;
   margin-bottom: 24px;
-  height: 52px;
-  font-size: 16px;
-  font-weight: 600;
-  border-radius: 10px;
-  background: var(--primary-gradient);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   color: white;
   border: none;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.add-member-btn::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
-}
-
-.add-member-btn:hover::before {
-  width: 300px;
-  height: 300px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
 .add-member-btn:hover {
+  background: linear-gradient(135deg, var(--primary-dark) 0%, #3730a3 100%);
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
 }
 
-/* ===================================
-   Members List - ENHANCED
-   =================================== */
+.add-member-btn:active {
+  transform: translateY(0);
+}
+
+/* =========================================
+   MEMBERS LIST
+   ========================================= */
 .members-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .member-card {
   padding: 20px;
+  background: white;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--gray-200);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: all 0.3s ease;
+  transition: all var(--transition-base);
   cursor: default;
-  background: white;
-  border-radius: 12px;
-  border: 2px solid transparent;
-  position: relative;
-  overflow: hidden;
-}
-
-.member-card::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  width: 4px;
-  background: var(--primary-gradient);
-  transform: scaleY(0);
-  transition: transform 0.3s ease;
-}
-
-.member-card:hover::before {
-  transform: scaleY(1);
 }
 
 .member-card:hover {
-  transform: translateX(8px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  border-color: #667eea;
+  border-color: var(--primary-light);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
 .member-info {
@@ -306,23 +317,22 @@
 }
 
 .member-avatar {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 20px;
+  font-size: 16px;
   color: white;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  position: relative;
-  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform var(--transition-fast);
 }
 
 .member-card:hover .member-avatar {
-  transform: scale(1.1) rotate(5deg);
+  transform: scale(1.05);
 }
 
 .member-details {
@@ -331,10 +341,10 @@
 }
 
 .member-details h3 {
-  margin: 0 0 6px 0;
-  font-size: 17px;
+  margin: 0 0 4px 0;
+  font-size: 15px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--gray-900);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -342,187 +352,162 @@
 
 .member-email {
   margin: 0;
-  font-size: 14px;
-  color: #666;
+  font-size: 13px;
+  color: var(--gray-500);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.member-email::before {
-  content: '✉';
-  font-size: 12px;
-  opacity: 0.7;
 }
 
 .member-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
+  gap: 10px;
 }
 
 .member-actions button {
-  transition: all 0.2s ease;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  color: var(--gray-400);
+  border-radius: var(--radius);
+  transition: all var(--transition-fast);
 }
 
 .member-actions button:hover {
-  transform: scale(1.15);
+  color: var(--danger);
+  background: var(--danger-light);
+  transform: scale(1.05);
 }
 
 .owner-badge {
-  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%) !important;
-  color: #1a1a1a !important;
-  font-weight: 700;
-  padding: 8px 16px !important;
-  font-size: 12px !important;
-  border-radius: 20px !important;
-  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+  background: linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%) !important;
+  color: #78350f !important;
+  font-weight: 700 !important;
+  padding: 6px 14px !important;
+  font-size: 11px !important;
+  border-radius: var(--radius) !important;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
 }
 
-/* ===================================
-   Empty States - ENHANCED
-   =================================== */
+/* =========================================
+   EMPTY STATE
+   ========================================= */
 .empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 24px;
-  color: #999;
   text-align: center;
-  animation: fadeIn 0.5s ease;
+  padding: 60px 24px;
+  color: var(--gray-500);
 }
 
 .empty-state mat-icon {
-  font-size: 80px;
-  width: 80px;
-  height: 80px;
+  font-size: 56px;
+  width: 56px;
+  height: 56px;
+  color: var(--gray-300);
   margin-bottom: 20px;
-  color: #ddd;
-  opacity: 0.5;
-  animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
 }
 
 .empty-state p {
-  font-size: 16px;
-  margin: 12px 0 0 0;
+  font-size: 15px;
+  margin: 0;
+  color: var(--gray-600);
   font-weight: 500;
 }
 
 .empty-state-hint {
-  font-size: 14px !important;
-  color: #bbb !important;
+  font-size: 13px !important;
+  color: var(--gray-400) !important;
   margin-top: 12px !important;
-  font-style: italic;
+  font-weight: 400 !important;
 }
 
-/* ===================================
-   Loading States - ENHANCED
-   =================================== */
+/* =========================================
+   LOADING STATE
+   ========================================= */
 .loading-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 48px;
+  padding: 60px;
   gap: 20px;
 }
 
 .loading-state p {
   margin: 0;
-  color: #666;
+  color: var(--gray-600);
   font-size: 15px;
   font-weight: 500;
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
 }
 
 .main-loading {
-  min-height: 400px;
+  min-height: 500px;
 }
 
-/* ===================================
-   Overlay - ENHANCED
-   =================================== */
+/* =========================================
+   OVERLAY
+   ========================================= */
 .overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(17, 24, 39, 0.5);
   z-index: 999;
   cursor: pointer;
-  animation: fadeIn 0.3s ease;
   backdrop-filter: blur(4px);
+  animation: fadeIn var(--transition-base);
 }
 
-/* ===================================
-   Add Member Modal - ENHANCED
-   =================================== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* =========================================
+   MODAL
+   ========================================= */
 .add-member-modal {
   position: fixed;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(0.95);
   width: 90%;
-  max-width: 550px;
+  max-width: 520px;
   background: white;
-  border-radius: 20px;
-  box-shadow: 0 32px 64px rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
   z-index: 1001;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition: all var(--transition-slow);
 }
 
 .add-member-modal.show {
   opacity: 1;
   pointer-events: auto;
-  animation: modalSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes modalSlideUp {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -40%);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, -50%);
-  }
+  transform: translate(-50%, -50%) scale(1);
 }
 
 .modal-content {
   display: flex;
   flex-direction: column;
-  max-height: 90vh;
 }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 28px;
-  background: var(--primary-gradient);
-  color: white;
-  border-radius: 20px 20px 0 0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 24px 28px;
+  border-bottom: 1px solid var(--gray-200);
+  background: linear-gradient(to bottom, white, var(--gray-50));
 }
 
 .modal-header h2 {
@@ -530,24 +515,28 @@
   align-items: center;
   gap: 12px;
   margin: 0;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
+  color: var(--gray-900);
+  letter-spacing: -0.01em;
 }
 
 .modal-header button {
-  color: white;
-  transition: all 0.2s ease;
+  color: var(--gray-400);
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: var(--radius);
+  transition: all var(--transition-fast);
 }
 
 .modal-header button:hover {
-  transform: rotate(90deg);
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--gray-200);
+  color: var(--gray-600);
 }
 
 .modal-body {
-  padding: 32px;
-  min-height: 180px;
-  overflow-y: auto;
+  padding: 28px;
 }
 
 .full-width {
@@ -556,13 +545,30 @@
 
 .hint {
   margin-top: 16px;
-  padding: 12px;
-  background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
-  border-radius: 8px;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--gray-50) 0%, white 100%);
+  border-left: 4px solid var(--primary);
+  border-radius: var(--radius-md);
   font-size: 13px;
-  color: #555;
-  line-height: 1.5;
-  border-left: 4px solid #667eea;
+  color: var(--gray-600);
+  line-height: 1.6;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.hint mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: var(--primary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.hint p {
+  margin: 0;
+  flex: 1;
 }
 
 .modal-footer {
@@ -570,96 +576,127 @@
   justify-content: flex-end;
   gap: 12px;
   padding: 20px 28px;
-  background: #f9f9f9;
-  border-radius: 0 0 20px 20px;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--gray-200);
+  background: var(--gray-50);
 }
 
 .modal-footer button {
-  min-width: 100px;
-  height: 42px;
-  border-radius: 8px;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
   font-weight: 600;
-  transition: all 0.2s ease;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.modal-footer button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+.modal-footer button:first-child {
+  background: white;
+  color: var(--gray-700);
+  border: 1.5px solid var(--gray-300);
 }
 
-/* ===================================
-   Kanban Section
-   =================================== */
+.modal-footer button:first-child:hover:not(:disabled) {
+  background: var(--gray-100);
+  border-color: var(--gray-400);
+}
+
+.modal-footer button:last-child {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.modal-footer button:last-child:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--primary-dark) 0%, #3730a3 100%);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  transform: translateY(-1px);
+}
+
+.modal-footer button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* =========================================
+   KANBAN SECTION
+   ========================================= */
 .kanban-section {
   margin-top: 32px;
-  animation: fadeIn 0.6s ease 0.2s both;
 }
 
-/* ===================================
-   Snackbar Styles - ENHANCED
-   =================================== */
+/* =========================================
+   MATERIAL OVERRIDES
+   ========================================= */
 ::ng-deep .snackbar-success {
-  background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%) !important;
+  background: var(--success) !important;
   color: white !important;
-  font-weight: 500;
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4) !important;
 }
 
 ::ng-deep .snackbar-error {
-  background: linear-gradient(135deg, #f44336 0%, #e57373 100%) !important;
+  background: var(--danger) !important;
   color: white !important;
-  font-weight: 500;
-  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4) !important;
+}
+
+::ng-deep .snackbar-info {
+  background: var(--info) !important;
+  color: white !important;
 }
 
 ::ng-deep .mat-mdc-snack-bar-container {
-  border-radius: 8px !important;
+  border-radius: var(--radius-md) !important;
 }
 
-/* ===================================
-   Accessibility & Focus States
-   =================================== */
-button:focus-visible,
-mat-chip:focus-visible {
-  outline: 3px solid #667eea;
-  outline-offset: 2px;
+::ng-deep .mat-mdc-form-field {
+  margin-bottom: 0 !important;
 }
 
-/* ===================================
-   Custom Scrollbar - ENHANCED
-   =================================== */
-.members-panel::-webkit-scrollbar,
+/* =========================================
+   CUSTOM SCROLLBAR
+   ========================================= */
 .panel-content::-webkit-scrollbar,
 .modal-body::-webkit-scrollbar {
-  width: 10px;
+  width: 8px;
 }
 
-.members-panel::-webkit-scrollbar-track,
 .panel-content::-webkit-scrollbar-track,
 .modal-body::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
+  background: transparent;
+  margin: 8px 0;
 }
 
-.members-panel::-webkit-scrollbar-thumb,
 .panel-content::-webkit-scrollbar-thumb,
 .modal-body::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--gray-300);
   border-radius: 10px;
-  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
-.members-panel::-webkit-scrollbar-thumb:hover,
 .panel-content::-webkit-scrollbar-thumb:hover,
 .modal-body::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  background: var(--gray-400);
+  background-clip: content-box;
 }
 
-/* ===================================
-   Responsive Design - ENHANCED
-   =================================== */
+/* =========================================
+   RESPONSIVE DESIGN
+   ========================================= */
+@media (max-width: 1024px) {
+  .project-detail {
+    padding: 24px;
+  }
+}
+
 @media (max-width: 768px) {
+  .project-detail {
+    padding: 20px;
+  }
+
   .members-panel {
     width: 100%;
     right: -100%;
@@ -667,14 +704,13 @@ mat-chip:focus-visible {
 
   .project-header {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 20px;
     padding: 24px;
+    gap: 20px;
   }
 
   .header-actions {
     width: 100%;
-    flex-wrap: wrap;
+    justify-content: space-between;
   }
 
   .add-member-modal {
@@ -682,12 +718,8 @@ mat-chip:focus-visible {
     max-width: none;
   }
 
-  .modal-body {
-    padding: 20px;
-  }
-
-  .panel-content {
-    padding: 20px;
+  .project-header h1 {
+    font-size: 26px;
   }
 }
 
@@ -696,118 +728,65 @@ mat-chip:focus-visible {
     padding: 16px;
   }
 
-  .project-header {
-    padding: 20px;
-  }
-
-  .project-header h1 {
-    font-size: 24px;
-  }
-
-  .member-card {
-    padding: 16px;
-  }
-
-  .member-avatar {
-    width: 48px;
-    height: 48px;
-    font-size: 18px;
-  }
-
   .members-btn span {
     display: none;
   }
 
-  .status-chip {
-    font-size: 11px !important;
-    padding: 8px 14px !important;
-  }
-
-  .panel-header {
+  .panel-content {
     padding: 20px;
   }
 
-  .modal-header {
+  .modal-header,
+  .modal-body,
+  .modal-footer {
     padding: 20px;
-  }
-
-  .modal-header h2 {
-    font-size: 18px;
-  }
-}
-
-/* ===================================
-   Dark Mode Support (Optional)
-   =================================== */
-@media (prefers-color-scheme: dark) {
-  .project-detail {
-    background: #121212;
-  }
-
-  .project-header {
-    background: #1e1e1e;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   }
 
   .project-header h1 {
-    color: #ffffff;
+    font-size: 22px;
   }
 
-  .project-description {
-    color: #b0b0b0;
-  }
-
-  .members-panel {
-    background: linear-gradient(to bottom, #1e1e1e 0%, #252525 100%);
-  }
-
-  .member-card {
-    background: #2a2a2a;
-    border-color: #333;
-  }
-
-  .member-details h3 {
-    color: #ffffff;
-  }
-
-  .member-email {
-    color: #b0b0b0;
-  }
-
-  .add-member-modal .modal-content {
-    background: #1e1e1e;
-  }
-
-  .modal-body {
-    background: #1e1e1e;
-  }
-
-  .modal-footer {
-    background: #2a2a2a;
-    border-top-color: #333;
+  .member-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
   }
 }
 
-/* ===================================
-   Print Styles
-   =================================== */
-@media print {
-  .members-panel,
-  .overlay,
-  .add-member-modal,
-  .header-actions,
-  .member-actions,
-  .add-member-btn {
-    display: none !important;
+/* =========================================
+   ANIMATIONS
+   ========================================= */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
   }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
 
-  .project-header {
-    box-shadow: none;
-    border: 2px solid #ddd;
-  }
+.members-panel.show {
+  animation: slideInRight var(--transition-slow);
+}
 
-  .member-card {
-    page-break-inside: avoid;
-    border: 1px solid #ddd;
+/* =========================================
+   ACCESSIBILITY
+   ========================================= */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
+}
+
+/* Focus visible for keyboard navigation */
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }

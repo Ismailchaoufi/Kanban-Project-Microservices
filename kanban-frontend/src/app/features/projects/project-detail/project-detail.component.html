@@ -1,17 +1,20 @@
 <ng-container *ngIf="!loading && project; else loadingTemplate">
   <div class="project-detail">
-    <!-- Project Header -->
+
+    <!-- ===== PROJECT HEADER ===== -->
     <header class="project-header">
       <div class="header-content">
         <h1>{{ project.title }}</h1>
         <p class="project-description">{{ project.description }}</p>
       </div>
+
       <div class="header-actions">
         <mat-chip
-          [class]="'status-chip status-' + project.status.toLowerCase()"
+          [ngClass]="['status-chip', getStatusClass(project.status)]"
           [attr.aria-label]="'Project status: ' + project.status">
           {{ project.status | titlecase }}
         </mat-chip>
+
         <button
           mat-raised-button
           color="primary"
@@ -24,12 +27,14 @@
       </div>
     </header>
 
-    <!-- Members Panel (Slide-in) -->
+    <!-- ===== MEMBERS PANEL ===== -->
     <aside
       class="members-panel"
       [class.show]="showMembersPanel"
       role="complementary"
       [attr.aria-hidden]="!showMembersPanel">
+
+      <!-- Panel Header -->
       <div class="panel-header">
         <h2>
           <mat-icon aria-hidden="true">group</mat-icon>
@@ -44,10 +49,12 @@
         </button>
       </div>
 
+      <!-- Panel Content -->
       <div class="panel-content">
-        <!-- Add Member Button (Only for Owner and Admin) -->
+
+        <!-- Add Member Button -->
         <button
-          *ngIf="isOwner() || isAdmin()"
+          *ngIf="canManageMembers()"
           mat-raised-button
           color="primary"
           (click)="openAddMemberModal()"
@@ -57,7 +64,7 @@
           <span>Add Member</span>
         </button>
 
-        <!-- Loading Members -->
+        <!-- Loading State -->
         <div *ngIf="loadingMembers" class="loading-state">
           <mat-spinner diameter="40" aria-label="Loading members"></mat-spinner>
           <p>Loading members...</p>
@@ -65,31 +72,37 @@
 
         <!-- Members List -->
         <div *ngIf="!loadingMembers && members.length > 0" class="members-list">
-          <mat-card
+          <div
             *ngFor="let member of members; trackBy: trackByUserId"
             class="member-card">
+
             <div class="member-info">
               <div
                 class="member-avatar"
                 [style.background-color]="getAvatarColor(member.userId)"
-                [attr.aria-label]="'Avatar for ' + member.firstName + ' ' + member.lastName">
+                [attr.aria-label]="'Avatar for ' + getMemberFullName(member)">
                 {{ getMemberInitials(member) }}
               </div>
+
               <div class="member-details">
-                <h3>{{ member.firstName }} {{ member.lastName }}</h3>
+                <h3>{{ getMemberFullName(member) }}</h3>
                 <p class="member-email">{{ member.email }}</p>
               </div>
             </div>
+
             <div class="member-actions">
+              <!-- Remove Button -->
               <button
-                *ngIf="isOwner() && member.userId !== project.ownerId"
+                *ngIf="canRemoveMember(member)"
                 mat-icon-button
                 color="warn"
-                (click)="removeMember(member.userId, member.firstName + ' ' + member.lastName)"
+                (click)="removeMember(member.userId, getMemberFullName(member))"
                 matTooltip="Remove member"
-                [attr.aria-label]="'Remove ' + member.firstName + ' ' + member.lastName + ' from project'">
+                [attr.aria-label]="'Remove ' + getMemberFullName(member) + ' from project'">
                 <mat-icon>person_remove</mat-icon>
               </button>
+
+              <!-- Owner Badge -->
               <mat-chip
                 *ngIf="member.userId === project.ownerId"
                 class="owner-badge"
@@ -97,19 +110,21 @@
                 Owner
               </mat-chip>
             </div>
-          </mat-card>
+          </div>
         </div>
 
         <!-- Empty State -->
         <div *ngIf="!loadingMembers && members.length === 0" class="empty-state">
           <mat-icon aria-hidden="true">group_off</mat-icon>
           <p>No members in this project yet</p>
-          <p class="empty-state-hint" *ngIf="isOwner()">Click "Add Member" to invite team members</p>
+          <p class="empty-state-hint" *ngIf="canManageMembers()">
+            Click "Add Member" to invite team members
+          </p>
         </div>
       </div>
     </aside>
 
-    <!-- Overlay -->
+    <!-- ===== OVERLAY ===== -->
     <div
       class="overlay"
       *ngIf="showMembersPanel || showAddMemberModal"
@@ -118,7 +133,7 @@
       aria-hidden="true">
     </div>
 
-    <!-- Add Member Modal -->
+    <!-- ===== ADD MEMBER MODAL ===== -->
     <div
       class="add-member-modal"
       [class.show]="showAddMemberModal"
@@ -127,16 +142,22 @@
       [attr.aria-hidden]="!showAddMemberModal">
 
       <div class="modal-content">
+
+        <!-- Modal Header -->
         <div class="modal-header">
           <h2 id="modal-title">
             <mat-icon>mail</mat-icon>
             <span>Invite Member</span>
           </h2>
-          <button mat-icon-button (click)="closeAddMemberModal()">
+          <button
+            mat-icon-button
+            (click)="closeAddMemberModal()"
+            aria-label="Close modal">
             <mat-icon>close</mat-icon>
           </button>
         </div>
 
+        <!-- Modal Body -->
         <div class="modal-body">
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Email address</mat-label>
@@ -145,37 +166,51 @@
               type="email"
               [(ngModel)]="inviteEmail"
               placeholder="example@email.com"
-              required />
+              (keyup.enter)="inviteMember()"
+              required
+              autofocus />
+            <mat-icon matPrefix>email</mat-icon>
           </mat-form-field>
 
-          <p class="hint">
-            The user will be added automatically if they already exist,
-            otherwise an invitation email will be sent.
-          </p>
+          <div class="hint">
+            <mat-icon>info</mat-icon>
+            <p>
+              The user will be added automatically if they already exist,
+              otherwise an invitation email will be sent.
+            </p>
+          </div>
         </div>
 
+        <!-- Modal Footer -->
         <div class="modal-footer">
-          <button mat-button (click)="closeAddMemberModal()">Cancel</button>
+          <button
+            mat-button
+            (click)="closeAddMemberModal()"
+            [disabled]="inviting">
+            Cancel
+          </button>
           <button
             mat-raised-button
             color="primary"
             (click)="inviteMember()"
             [disabled]="!inviteEmail || inviting">
-            Invite
+            <mat-spinner *ngIf="inviting" diameter="16"></mat-spinner>
+            <span *ngIf="!inviting">Send Invite</span>
+            <span *ngIf="inviting">Sending...</span>
           </button>
         </div>
       </div>
     </div>
 
-
-    <!-- Kanban Board -->
+    <!-- ===== KANBAN BOARD ===== -->
     <section class="kanban-section" aria-label="Project tasks board">
       <app-kanban-board [projectId]="projectId"></app-kanban-board>
     </section>
+
   </div>
 </ng-container>
 
-<!-- Loading Template -->
+<!-- ===== LOADING TEMPLATE ===== -->
 <ng-template #loadingTemplate>
   <div class="loading-state main-loading">
     <mat-spinner diameter="50" aria-label="Loading project"></mat-spinner>
