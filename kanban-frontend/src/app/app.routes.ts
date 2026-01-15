@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import {authGuard} from './core/guards/auth.guard';
+import {AcceptInvitationComponent} from './features/invitations/accept-invitation/accept-invitation.component';
 
 export const routes: Routes = [
   {
@@ -25,6 +26,10 @@ export const routes: Routes = [
     path: 'profile',
     loadChildren: () => import('./features/profile/profile.routes').then(m => m.PROFILE_ROUTES),
     canActivate: [authGuard]
+  },
+  {
+    path: 'invitations/accept',
+    component: AcceptInvitationComponent
   },
   {
     path: '**',

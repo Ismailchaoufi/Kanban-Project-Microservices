@@ -1,10 +1,7 @@
 package com.examlple.projectservice.service;
 
 import com.examlple.projectservice.client.AuthServiceClient;
-import com.examlple.projectservice.dto.AddMemberRequest;
-import com.examlple.projectservice.dto.InvitationRequest;
-import com.examlple.projectservice.dto.InvitationResponse;
-import com.examlple.projectservice.dto.UserDTO;
+import com.examlple.projectservice.dto.*;
 import com.examlple.projectservice.entity.Invitation;
 import com.examlple.projectservice.entity.InvitationStatus;
 import com.examlple.projectservice.entity.Project;
@@ -107,6 +104,11 @@ public class InvitationService {
             throw new BadRequestException("This invitation has expired");
         }
 
+        UserDTO user = authServiceClient.getUserByIdInternal(userId);
+
+        if (!user.getEmail().equalsIgnoreCase(invitation.getEmail())) {
+            throw new BadRequestException("This invitation was sent to a different email address");
+        }
         // Ajouter le membre
         projectService.addMemberFromInvitation(invitation.getProjectId(), userId);
 
@@ -115,5 +117,27 @@ public class InvitationService {
         invitationRepository.save(invitation);
 
         log.info("User {} accepted invitation for project {}", userId, invitation.getProjectId());
+    }
+
+    @Transactional(readOnly = true)
+    public InvitationInfoResponse getInvitationInfo(String token) {
+        Invitation invitation = invitationRepository.findByToken(token)
+                .orElseThrow(() -> new ResourceNotFoundException("Invalid invitation token"));
+
+        Project project = projectRepository.findById(invitation.getProjectId())
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
+
+        UserDTO inviter = authServiceClient.getUserById(invitation.getInvitedBy(), 1L, "ADMIN");
+
+        boolean expired = invitation.getExpiresAt().isBefore(LocalDateTime.now());
+        boolean valid = invitation.getStatus() == InvitationStatus.PENDING && !expired;
+
+        return InvitationInfoResponse.builder()
+                .email(invitation.getEmail())
+                .projectName(project.getTitle())
+                .invitedBy(inviter.getFirstName() + " " + inviter.getLastName())
+                .expired(expired)
+                .valid(valid)
+                .build();
     }
 }

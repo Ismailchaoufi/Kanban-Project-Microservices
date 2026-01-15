@@ -1,0 +1,52 @@
+<div class="invitation-container">
+  <mat-card class="invitation-card">
+    <!-- Loading State -->
+    <div *ngIf="state === 'loading'" class="state-content">
+      <mat-spinner diameter="60"></mat-spinner>
+      <h2>Processing Invitation...</h2>
+      <p>Please wait</p>
+    </div>
+
+    <!-- Not Registered State -->
+    <div *ngIf="state === 'not-registered'" class="state-content">
+      <mat-icon class="icon-large info">mail</mat-icon>
+      <h2>You're Invited!</h2>
+      <div class="invitation-info">
+        <p><strong>{{ invitedBy }}</strong> invited you to join</p>
+        <p class="project-name">{{ projectName }}</p>
+        <p class="email-info">Invitation sent to: <strong>{{ invitationEmail }}</strong></p>
+      </div>
+
+      <div class="actions">
+        <button mat-raised-button color="primary" (click)="goToRegister()">
+          <mat-icon>person_add</mat-icon>
+          Create Account & Join
+        </button>
+        <button mat-button (click)="goToLogin()">
+          Already have an account? Sign in
+        </button>
+      </div>
+    </div>
+
+    <!-- Success State -->
+    <div *ngIf="state === 'success'" class="state-content success">
+      <mat-icon class="icon-large success">check_circle</mat-icon>
+      <h2>Welcome Aboard!</h2>
+      <p>You've successfully joined <strong>{{ projectName }}</strong></p>
+      <p class="redirect-text">Redirecting to your projects...</p>
+      <button mat-raised-button color="primary" (click)="goToProjects()">
+        Go to Projects Now
+      </button>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="state === 'error'" class="state-content error">
+      <mat-icon class="icon-large error">error</mat-icon>
+      <h2>Oops!</h2>
+      <p class="error-message">{{ errorMessage }}</p>
+      <button mat-raised-button color="primary" (click)="goToProjects()">
+        Go to Projects
+      </button>
+    </div>
+  </mat-card>
+</div>

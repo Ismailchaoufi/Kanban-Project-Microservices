@@ -136,6 +136,15 @@ public class ProjectController {
         return ResponseEntity.ok("Invitation accepted successfully");
     }
 
+    /**
+     * Vérifier un token d'invitation (PUBLIC - pas besoin d'authentification)
+     */
+    @GetMapping("/invitations/verify")
+    public ResponseEntity<InvitationInfoResponse> verifyInvitation(@RequestParam String token) {
+        InvitationInfoResponse info = invitationService.getInvitationInfo(token);
+        return ResponseEntity.ok(info);
+    }
+
 //    /**
 //     * Annuler une invitation (OWNER ou ADMIN uniquement)
 //     */
