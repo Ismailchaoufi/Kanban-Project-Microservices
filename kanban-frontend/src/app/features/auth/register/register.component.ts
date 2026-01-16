@@ -1,15 +1,17 @@
-import {Component, OnInit} from '@angular/core';
-import {CommonModule} from '@angular/common';
-import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
-import {MatCardModule} from '@angular/material/card';
-import {MatFormFieldModule} from '@angular/material/form-field';
-import {MatInputModule} from '@angular/material/input';
-import {MatButtonModule} from '@angular/material/button';
-import {MatIconModule} from '@angular/material/icon';
-import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
-import {MatSnackBar, MatSnackBarModule} from '@angular/material/snack-bar';
-import {AuthService} from '../../../core/services/auth.service';
-import {Router} from '@angular/router';
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+
+import { AuthService } from '../../../core/services/auth.service';
+import { InvitationService } from '../../../core/services/invitation.service';
 
 @Component({
   selector: 'app-register',
@@ -34,10 +36,17 @@ export class RegisterComponent implements OnInit {
   hidePassword = true;
   hideConfirmPassword = true;
 
+  // ✅ Nouveau : Support invitation
+  invitationToken: string | null = null;
+  prefilledEmail: string | null = null;
+  isFromInvitation = false;
+
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
+    private invitationService: InvitationService,
     private router: Router,
+    private route: ActivatedRoute,
     private snackBar: MatSnackBar
   ) {}
 
@@ -47,10 +56,24 @@ export class RegisterComponent implements OnInit {
       return;
     }
 
+    // ✅ Récupérer les paramètres d'invitation
+    this.route.queryParams.subscribe(params => {
+      this.invitationToken = params['invitationToken'] || null;
+      this.prefilledEmail = params['email'] || null;
+      this.isFromInvitation = !!this.invitationToken;
+    });
+
+    this.initializeForm();
+  }
+
+  private initializeForm(): void {
     this.registerForm = this.fb.group({
       firstName: ['', [Validators.required, Validators.minLength(2)]],
       lastName: ['', [Validators.required, Validators.minLength(2)]],
-      email: ['', [Validators.required, Validators.email]],
+      email: [
+        { value: this.prefilledEmail || '', disabled: this.isFromInvitation },
+        [Validators.required, Validators.email]
+      ],
       password: ['', [
         Validators.required,
         Validators.minLength(8),
@@ -77,34 +100,113 @@ export class RegisterComponent implements OnInit {
 
   onSubmit(): void {
     if (this.registerForm.invalid) {
+      this.registerForm.markAllAsTouched();
       return;
     }
 
     this.loading = true;
-    const { confirmPassword, ...registerData } = this.registerForm.value;
+    const { confirmPassword, ...registerData } = this.registerForm.getRawValue();
 
     this.authService.register(registerData).subscribe({
       next: () => {
-        this.showMessage('Registration successful! Redirecting...', 'success');
-        setTimeout(() => {
-          this.router.navigate(['/dashboard']);
-        }, 1500);
+        this.showMessage('Registration successful!', 'success');
+
+        // ✅ Si vient d'une invitation, accepter l'invitation
+        if (this.invitationToken) {
+          this.acceptPendingInvitation();
+        } else {
+          // Sinon, rediriger normalement vers dashboard
+          setTimeout(() => {
+            this.router.navigate(['/dashboard']);
+          }, 1500);
+        }
       },
       error: (error) => {
         this.loading = false;
-        this.showMessage(error.message || 'Registration failed.', 'error');
+        const message = error.error?.message || error.message || 'Registration failed';
+        this.showMessage(message, 'error');
+      }
+    });
+  }
+
+  /**
+   * ✅ Accepter l'invitation automatiquement après inscription
+   */
+  private acceptPendingInvitation(): void {
+    if (!this.invitationToken) {
+      this.router.navigate(['/dashboard']);
+      return;
+    }
+
+    this.invitationService.acceptInvitation(this.invitationToken).subscribe({
+      next: () => {
+        this.showMessage('You have joined the project successfully!', 'success');
+        setTimeout(() => {
+          this.router.navigate(['/projects']);
+        }, 1500);
+      },
+      error: (error) => {
+        console.error('Failed to accept invitation:', error);
+        this.showMessage('Registered successfully, but failed to join project', 'error');
+        setTimeout(() => {
+          this.router.navigate(['/dashboard']);
+        }, 2000);
+      },
+      complete: () => {
+        this.loading = false;
       }
     });
   }
 
   goToLogin(): void {
-    this.router.navigate(['/auth/login']);
+    // ✅ Conserver le token d'invitation si présent
+    if (this.invitationToken) {
+      this.router.navigate(['/auth/login'], {
+        queryParams: {
+          returnUrl: `/invitations/accept?token=${this.invitationToken}`
+        }
+      });
+    } else {
+      this.router.navigate(['/auth/login']);
+    }
   }
 
   private showMessage(message: string, type: 'success' | 'error'): void {
     this.snackBar.open(message, 'Close', {
-      duration: 3000,
-      panelClass: type === 'success' ? 'snackbar-success' : 'snackbar-error'
+      duration: type === 'success' ? 3000 : 5000,
+      panelClass: type === 'success' ? 'snackbar-success' : 'snackbar-error',
+      horizontalPosition: 'end',
+      verticalPosition: 'top'
     });
+  }
+
+  /**
+   * ✅ Helper pour vérifier si formulaire est valide
+   */
+  get isFormValid(): boolean {
+    return this.registerForm.valid;
+  }
+
+  /**
+   * ✅ Getters pour faciliter l'accès aux contrôles dans le template
+   */
+  get firstName() {
+    return this.registerForm.get('firstName');
+  }
+
+  get lastName() {
+    return this.registerForm.get('lastName');
+  }
+
+  get email() {
+    return this.registerForm.get('email');
+  }
+
+  get password() {
+    return this.registerForm.get('password');
+  }
+
+  get confirmPassword() {
+    return this.registerForm.get('confirmPassword');
   }
 }
