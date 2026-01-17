@@ -1,15 +1,18 @@
 <div class="app-container">
-  <!-- Navbar -->
+  <!-- ✅ Navbar : seulement si authentifié ET pas sur page publique -->
   <app-navbar
-    *ngIf="isAuthenticated"
+    *ngIf="shouldShowNavigation"
     (toggleSidenav)="toggleSidenav()">
   </app-navbar>
 
   <!-- Main Layout -->
-  <mat-sidenav-container class="sidenav-container" [class.authenticated]="isAuthenticated">
-    <!-- Sidebar -->
+  <mat-sidenav-container
+    class="sidenav-container"
+    [class.authenticated]="shouldShowNavigation">
+
+    <!-- ✅ Sidebar : seulement si authentifié ET pas sur page publique -->
     <mat-sidenav
-      *ngIf="isAuthenticated"
+      *ngIf="shouldShowNavigation"
       mode="side"
       [opened]="sidenavOpened"
       class="sidenav">

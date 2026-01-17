@@ -20,8 +20,6 @@ spring:
           uri: lb://PROJECT-SERVICE
           predicates:
             - Path=/api/v1/projects/**
-          filters:
-            - AuthenticationFilter
 
 
         # Task Service Routes

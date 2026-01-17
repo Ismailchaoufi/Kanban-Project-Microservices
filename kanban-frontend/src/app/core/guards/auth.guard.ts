@@ -6,6 +6,13 @@ export const authGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
+  // Laisser passer les routes publiques
+  const publicRoutes = ['/auth/login', '/auth/register', '/invitations/accept'];
+
+  if (publicRoutes.some(path => state.url.startsWith(path))) {
+    return true;
+  }
+
   if (authService.isAuthenticated()) {
     return true;
   }

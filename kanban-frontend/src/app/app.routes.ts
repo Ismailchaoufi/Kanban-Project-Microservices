@@ -29,7 +29,8 @@ export const routes: Routes = [
   },
   {
     path: 'invitations/accept',
-    component: AcceptInvitationComponent
+    loadComponent: () => import('./features/invitations/accept-invitation/accept-invitation.component')
+      .then(m => m.AcceptInvitationComponent)
   },
   {
     path: '**',
