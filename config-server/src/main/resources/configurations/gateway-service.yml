@@ -8,12 +8,23 @@ spring:
           predicates:
             - Path=/api/v1/auth/**,/api/v1/users/**
 
-        - id: project-service-public-invitations
+        # ========================================
+        # Project Service - PUBLIC (Invitations Verify)
+        # ========================================
+        - id: project-service-public-verify
           uri: lb://PROJECT-SERVICE
           predicates:
             - Path=/api/v1/projects/invitations/verify
           filters:
             - RemoveRequestHeader=Authorization
+
+        # ========================================
+        # Project Service - PROTECTED (Invitations Accept)
+        # ========================================
+        - id: project-service-invitations-accept
+          uri: lb://PROJECT-SERVICE
+          predicates:
+            - Path=/api/v1/projects/invitations/accept
 
         # Project Service Routes
         - id: project-service

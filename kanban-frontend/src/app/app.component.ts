@@ -1,8 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatSidenavModule } from '@angular/material/sidenav';
-import { Observable, filter } from 'rxjs';
+import { Observable, filter, Subject, takeUntil } from 'rxjs';
 
 import { SidebarComponent } from './shared/sidebar/sidebar.component';
 import { NavbarComponent } from './shared/navbar/navbar.component';
@@ -22,12 +22,14 @@ import { User } from './core/models/user.model';
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
   title = 'Kanban Board';
   isAuthenticated = false;
   currentUser$!: Observable<User | null>;
   sidenavOpened = true;
   isPublicPage = false;
+
+  private destroy$ = new Subject<void>();
 
   constructor(
     private authService: AuthService,
@@ -35,33 +37,34 @@ export class AppComponent implements OnInit {
   ) {
     // Écouter les changements de route
     this.router.events
-      .pipe(filter(event => event instanceof NavigationEnd))
+      .pipe(
+        filter(event => event instanceof NavigationEnd),
+        takeUntil(this.destroy$)
+      )
       .subscribe((event: NavigationEnd) => {
         this.checkIfPublicPage(event.url);
       });
   }
 
   ngOnInit(): void {
-    // ✅ Vérifier la route AVANT tout
+    // Vérifier la route actuelle IMMÉDIATEMENT
     this.checkIfPublicPage(this.router.url);
 
     this.isAuthenticated = this.authService.isAuthenticated();
     this.currentUser$ = this.authService.currentUser$;
 
-    this.authService.currentUser$.subscribe(user => {
-      this.isAuthenticated = user !== null;
+    // ✅ NE PAS rediriger automatiquement ici
+    // Le auth.guard s'en charge
+    this.authService.currentUser$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(user => {
+        this.isAuthenticated = user !== null;
+      });
+  }
 
-      // ✅ IMPORTANT : Utiliser setTimeout pour laisser le router se charger
-      setTimeout(() => {
-        // Re-vérifier si on est sur une page publique
-        this.checkIfPublicPage(this.router.url);
-
-        // Ne rediriger QUE si pas authentifié ET pas sur page publique
-        if (!user && !this.isPublicPage) {
-          this.router.navigate(['/auth/login']);
-        }
-      }, 0);
-    });
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   private checkIfPublicPage(url: string): void {
