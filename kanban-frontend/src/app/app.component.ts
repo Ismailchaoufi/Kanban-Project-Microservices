@@ -27,8 +27,6 @@ export class AppComponent implements OnInit {
   isAuthenticated = false;
   currentUser$!: Observable<User | null>;
   sidenavOpened = true;
-
-  // Détecter si on est sur une page publique
   isPublicPage = false;
 
   constructor(
@@ -44,25 +42,28 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // ✅ Vérifier la route AVANT tout
+    this.checkIfPublicPage(this.router.url);
+
     this.isAuthenticated = this.authService.isAuthenticated();
     this.currentUser$ = this.authService.currentUser$;
-
-    // Vérifier la route actuelle au chargement
-    this.checkIfPublicPage(this.router.url);
 
     this.authService.currentUser$.subscribe(user => {
       this.isAuthenticated = user !== null;
 
-      // Ne rediriger que si pas sur page publique
-      if (!user && !this.isPublicPage) {
-        this.router.navigate(['/auth/login']);
-      }
+      // ✅ IMPORTANT : Utiliser setTimeout pour laisser le router se charger
+      setTimeout(() => {
+        // Re-vérifier si on est sur une page publique
+        this.checkIfPublicPage(this.router.url);
+
+        // Ne rediriger QUE si pas authentifié ET pas sur page publique
+        if (!user && !this.isPublicPage) {
+          this.router.navigate(['/auth/login']);
+        }
+      }, 0);
     });
   }
 
-  /**
-   * vérifier si la route actuelle est publique
-   */
   private checkIfPublicPage(url: string): void {
     const publicRoutes = [
       '/auth/login',
@@ -73,16 +74,10 @@ export class AppComponent implements OnInit {
     this.isPublicPage = publicRoutes.some(route => url.startsWith(route));
   }
 
-  /**
-   * Toggle sidebar
-   */
   toggleSidenav(): void {
     this.sidenavOpened = !this.sidenavOpened;
   }
 
-  /**
-   * Helper : Afficher navbar/sidebar ?
-   */
   get shouldShowNavigation(): boolean {
     return this.isAuthenticated && !this.isPublicPage;
   }

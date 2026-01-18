@@ -9,3 +9,12 @@ new plan :
 i did the invitation members by email
 now when i click in the invitation link in email it took me to login i didn't see the component accept invitation
 when i drag and drop the status of the task should change dynamically without refreshing the page
+
+
+
+
+still have a problem:
+the problem that when i click the invitation link it took directly in login and when i create an account becaude
+i dont have account and thien when connect and when go in emails to click again then show the invitation component and
+go to projects but i wanna in the first when i click the link for first time it should take me to invitation compoennt and
+verify if i had account or not then apply invitation componnet logic that s what i want i think the problem in front end not backend
