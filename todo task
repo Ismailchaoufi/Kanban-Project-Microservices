@@ -18,3 +18,11 @@ the problem that when i click the invitation link it took directly in login and 
 i dont have account and thien when connect and when go in emails to click again then show the invitation component and
 go to projects but i wanna in the first when i click the link for first time it should take me to invitation compoennt and
 verify if i had account or not then apply invitation componnet logic that s what i want i think the problem in front end not backend
+(done)
+
+
+problem :
+the status of task doesn't change in real time
+the changes should change in real time
+in dashboard the tasks assigned doesn't display
+fix dashboard
