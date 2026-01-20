@@ -847,7 +847,7 @@
 
 .modal-footer button:last-child {
   background: var(--primary-gradient);
-  color: white;
+  color: black !important;
   border: none;
   box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
 }

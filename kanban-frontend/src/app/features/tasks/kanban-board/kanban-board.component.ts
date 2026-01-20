@@ -95,48 +95,75 @@ export class KanbanBoardComponent implements OnInit {
 
   drop(event: CdkDragDrop<Task[]>, targetStatus: TaskStatus): void {
     if (event.previousContainer === event.container) {
+      // Just reordering within the same column
       moveItemInArray(
         event.container.data,
         event.previousIndex,
         event.currentIndex
       );
     } else {
+      // Moving task to a different column
       const task = event.previousContainer.data[event.previousIndex];
+      const oldStatus = task.status;
+      const sourceColumn = event.previousContainer.data;
+      const targetColumn = event.container.data;
+      const oldIndex = event.previousIndex;
 
+      // OPTIMISTIC UPDATE: Update task status immediately
+      task.status = targetStatus;
+
+      // Transfer the item visually
       transferArrayItem(
-        event.previousContainer.data,
-        event.container.data,
+        sourceColumn,
+        targetColumn,
         event.previousIndex,
         event.currentIndex
       );
 
-      this.updateTaskStatus(task.id, targetStatus);
-    }
-  }
+      // Update on backend
+      this.taskService.updateTaskStatus(task.id, targetStatus, this.projectId).subscribe({
+        next: (updatedTask) => {
+          // Merge the updated task data from server
+          if (updatedTask) {
+            Object.assign(task, updatedTask);
+          }
 
-  updateTaskStatus(taskId: number, newStatus: TaskStatus): void {
-    this.taskService.updateTaskStatus(taskId, newStatus, this.projectId).subscribe({
-      next: () => {
-        this.snackBar.open('Task status updated', 'Close', {
-          duration: 2000,
-          horizontalPosition: 'end',
-          verticalPosition: 'bottom'
-        });
-      },
-      error: () => {
-        this.snackBar.open('Failed to update task status', 'Close', {
-          duration: 3000
-        });
-        this.loadTasks();
-      }
-    });
+          this.snackBar.open('Task status updated', 'Close', {
+            duration: 2000,
+            horizontalPosition: 'end',
+            verticalPosition: 'bottom'
+          });
+        },
+        error: (error) => {
+          console.error('Failed to update task status:', error);
+
+          // ROLLBACK: Revert the optimistic update
+          task.status = oldStatus;
+
+          // Move the task back to its original position
+          const currentIndex = targetColumn.indexOf(task);
+          if (currentIndex !== -1) {
+            transferArrayItem(
+              targetColumn,
+              sourceColumn,
+              currentIndex,
+              oldIndex
+            );
+          }
+
+          this.snackBar.open('Failed to update task status', 'Close', {
+            duration: 3000,
+            panelClass: 'snackbar-error'
+          });
+        }
+      });
+    }
   }
 
   getConnectedLists(): string[] {
     return this.columns.map((_, index) => `cdk-drop-list-${index}`);
   }
 
-  // Méthode pour créer une tâche
   createTask(): void {
     const dialogRef = this.dialog.open(TaskFormComponent, {
       width: '600px',
@@ -145,12 +172,11 @@ export class KanbanBoardComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        this.loadTasks();
+        this.loadTasks(); // Reload tasks after creation
       }
     });
   }
 
-// Méthode pour voir les détails
   onTaskClick(task: Task): void {
     const dialogRef = this.dialog.open(TaskDetailComponent, {
       width: '700px',
@@ -159,7 +185,8 @@ export class KanbanBoardComponent implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      if (result?.deleted) {
+      // Reload tasks if deleted or updated
+      if (result?.deleted || result?.updated) {
         this.loadTasks();
       }
     });

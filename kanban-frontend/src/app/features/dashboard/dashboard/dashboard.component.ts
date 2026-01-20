@@ -101,7 +101,13 @@ export class DashboardComponent implements OnInit {
   }
 
   loadTasksForDashboard(): void {
-    this.taskService.getAllTasks(undefined, undefined, undefined, undefined, undefined, 0, 100).subscribe({
+    const userId = this.authService.getCurrentUser()?.id;
+
+    if (!userId) {
+      this.loading = false;
+      return;
+    }
+    this.taskService.getAllTasks(undefined, undefined, undefined, userId, undefined, 0, 100).subscribe({
       next: (response) => {
         const allTasks = response.content;
         this.totalTasks = allTasks.length;
@@ -110,8 +116,7 @@ export class DashboardComponent implements OnInit {
         this.inProgressTasks = allTasks.filter(t => t.status === 'IN_PROGRESS').length;
         this.doneTasks = allTasks.filter(t => t.status === 'DONE').length;
 
-        const userId = this.authService.getCurrentUser()?.id;
-        this.myTasks = allTasks.filter(t => t.assignedUser?.id === userId).slice(0, 5);
+        this.myTasks = allTasks.slice(0, 5);
 
         this.updateChart();
         this.loading = false;

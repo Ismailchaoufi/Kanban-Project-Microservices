@@ -74,7 +74,11 @@ export class TaskDetailComponent {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        this.data.task = result;
+        // Update the local task with all new data from server
+        Object.assign(this.data.task, result);
+
+        // Notify parent component to refresh
+        this.dialogRef.close({ updated: true, task: result });
       }
     });
   }
