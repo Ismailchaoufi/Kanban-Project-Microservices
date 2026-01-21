@@ -2,32 +2,46 @@
   padding: 20px;
   overflow-x: auto;
   min-height: 600px;
+  background-color: #f4f5f7; /* light background like Trello */
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
+/* Columns container */
 .kanban-columns {
   display: flex;
   gap: 24px;
   min-width: max-content;
+  padding-bottom: 20px;
 }
 
+/* Individual Column */
 .kanban-column {
-  width: 350px;
-  background-color: #f5f5f5;
+  width: 360px;
+  background-color: #ebecf0;
   border-radius: 12px;
-  border-top: 4px solid;
   display: flex;
   flex-direction: column;
   max-height: calc(100vh - 200px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease;
 }
 
+.kanban-column:hover {
+  transform: translateY(-2px);
+}
+
+/* Column Header */
 .column-header {
   padding: 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #e0e0e0;
-  background-color: white;
+  border-bottom: 1px solid #dfe1e6;
+  background-color: #f8f9fa;
   border-radius: 12px 12px 0 0;
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.05);
 }
 
 .column-title {
@@ -37,27 +51,29 @@
 }
 
 .column-indicator {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
+  box-shadow: 0 0 4px rgba(0,0,0,0.2);
 }
 
 .column-title h3 {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: #172b4d;
 }
 
 .task-count {
-  background-color: #e0e0e0;
-  color: #666;
+  background-color: rgba(0,0,0,0.05);
+  color: #555;
   padding: 2px 8px;
   border-radius: 12px;
   font-size: 12px;
   font-weight: 600;
 }
 
+/* Tasks container */
 .tasks-container {
   flex: 1;
   padding: 16px;
@@ -68,14 +84,21 @@
   gap: 12px;
 }
 
+/* Task card wrapper (draggable) */
 .task-card-wrapper {
-  cursor: move;
+  cursor: grab;
 }
 
+.task-card-wrapper:active {
+  cursor: grabbing;
+}
+
+/* Dragging effects */
 .cdk-drag-preview {
-  opacity: 0.8;
+  opacity: 0.9;
   transform: rotate(2deg);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
 }
 
 .cdk-drag-animating {
@@ -87,13 +110,14 @@
 }
 
 .cdk-drag-placeholder {
-  opacity: 0.5;
-  background-color: #ddd;
+  opacity: 0.4;
+  background-color: #dfe1e6;
   border: 2px dashed #999;
   border-radius: 8px;
   min-height: 100px;
 }
 
+/* Empty state */
 .empty-column {
   display: flex;
   flex-direction: column;
@@ -102,6 +126,7 @@
   padding: 40px;
   color: #999;
   text-align: center;
+  font-style: italic;
 }
 
 .empty-column mat-icon {
@@ -116,6 +141,7 @@
   font-size: 14px;
 }
 
+/* Loading state */
 .loading-state {
   display: flex;
   flex-direction: column;
@@ -127,23 +153,34 @@
 .loading-state p {
   margin-top: 16px;
   color: #666;
+  font-size: 14px;
 }
 
-/* Scrollbar */
+/* Scrollbar (modern) */
 .tasks-container::-webkit-scrollbar {
   width: 6px;
 }
 
 .tasks-container::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
+  background: transparent;
 }
 
 .tasks-container::-webkit-scrollbar-thumb {
-  background: #888;
+  background: rgba(0,0,0,0.2);
   border-radius: 3px;
 }
 
 .tasks-container::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: rgba(0,0,0,0.4);
+}
+
+/* Add Task button */
+.column-header button {
+  background-color: transparent;
+  color: #5e6c84;
+  transition: 0.2s;
+}
+
+.column-header button:hover {
+  background-color: rgba(0,0,0,0.05);
 }

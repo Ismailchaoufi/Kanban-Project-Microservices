@@ -8,7 +8,7 @@
    - Members Panel: 1050
    - Modal: 1060
 */
-:root {
+:host {
   /* Primary Colors - Vibrant Blue/Purple */
   --primary: #6366f1;
   --primary-dark: #4f46e5;
@@ -215,7 +215,7 @@
 
 .members-btn:hover mat-icon,
 .members-btn:hover span {
-  color: black !important;
+  color: white;
 }
 
 .members-btn:active {
@@ -402,11 +402,11 @@
 }
 
 .add-member-btn mat-icon {
-  color: black !important;
+  color: white !important;
 }
 
 .add-member-btn span {
-  color: black !important;
+  color: white !important;
   font-weight: 700;
 }
 
@@ -597,7 +597,7 @@
 }
 
 .member-actions button:hover {
-  color: black !important;
+  color: white;
   transform: scale(1.15) rotate(10deg);
   box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
 }
@@ -847,7 +847,7 @@
 
 .modal-footer button:last-child {
   background: var(--primary-gradient);
-  color: black !important;
+  color: white;
   border: none;
   box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
 }

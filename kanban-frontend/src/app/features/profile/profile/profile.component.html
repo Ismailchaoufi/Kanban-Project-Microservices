@@ -1,1 +1,27 @@
-<p>profile works!</p>
+<div class="profile-container" *ngIf="currentUser">
+  <mat-card class="profile-card">
+
+    <!-- Header -->
+    <div class="profile-header">
+      <div class="avatar">
+        {{ currentUser.firstName.charAt(0) }}{{ currentUser.lastName.charAt(0) }}
+      </div>
+      <h2>{{ currentUser.firstName }} {{ currentUser.lastName }}</h2>
+      <span class="role">{{ currentUser.role }}</span>
+    </div>
+
+    <!-- Info -->
+    <div class="profile-body">
+      <div class="info-item">
+        <mat-icon>email</mat-icon>
+        <span>{{ currentUser.email }}</span>
+      </div>
+
+      <div class="info-item">
+        <mat-icon>verified_user</mat-icon>
+        <span>Active account</span>
+      </div>
+    </div>
+
+  </mat-card>
+</div>
