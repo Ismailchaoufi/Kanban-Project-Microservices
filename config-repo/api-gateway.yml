@@ -1,11 +1,29 @@
-server:
-  port: 8222
-
 spring:
   application:
     name: api-gateway
   cloud:
     gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost"
+              - "http://localhost:80"
+              - "http://localhost:4200"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+            maxAge: 3600
+
       routes:
         - id: auth-service
           uri: lb://AUTH-SERVICE
@@ -34,30 +52,15 @@ spring:
           predicates:
             - Path=/api/v1/tasks/**
 
-      globalcors:
-        corsConfigurations:
-          '[/**]':
-            allowedOrigins:
-              - "http://localhost:4200"
-              - "http://localhost"
-              - "${FRONTEND_URL:http://localhost}"
-            allowedMethods:
-              - GET
-              - POST
-              - PUT
-              - DELETE
-              - PATCH
-              - OPTIONS
-            allowedHeaders: "*"
-            allowCredentials: true
-
 eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_URI:http://eureka-server:8761/eureka/}
   instance:
     prefer-ip-address: true
-    instance-id: ${spring.application.name}:${random.value}
 
 jwt:
   secret: ${JWT_SECRET}
+
+server:
+  port: 8222
