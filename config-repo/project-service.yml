@@ -1,0 +1,48 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: project-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://project-db:5432/project_db}
+    username: ${SPRING_DATASOURCE_USERNAME:project_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:project_pass}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${SPRING_MAIL_USERNAME}
+    password: ${SPRING_MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+app:
+  frontend:
+    url: ${APP_FRONTEND_URL:http://localhost}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://eureka-server:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${random.value}
+
+logging:
+  level:
+    com.examlple.projectservice: DEBUG
+    org.springframework.web: DEBUG
+    feign: DEBUG

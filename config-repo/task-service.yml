@@ -1,0 +1,33 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: task-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://task-db:5432/task_db}
+    username: ${SPRING_DATASOURCE_USERNAME:task_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:task_pass}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://eureka-server:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${random.value}
+
+logging:
+  level:
+    com.examlple.taskservice: DEBUG
+    org.springframework.web: DEBUG
+    feign: DEBUG

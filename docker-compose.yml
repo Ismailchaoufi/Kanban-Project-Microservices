@@ -35,7 +35,8 @@ services:
     container_name: eureka-server
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      SPRING_APPLICATION_NAME: eureka-server
     ports:
       - "8761:8761"
     depends_on:
@@ -48,7 +49,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 40s
+      start_period: 60s
+    restart: on-failure
 
   # ===========================================
   # PostgreSQL Databases
@@ -120,12 +122,13 @@ services:
     container_name: auth-service
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_APPLICATION_NAME: auth-service
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      EUREKA_URI: http://eureka-server:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:postgresql://auth-db:5432/auth_db
       SPRING_DATASOURCE_USERNAME: auth_user
       SPRING_DATASOURCE_PASSWORD: auth_pass
-      JWT_SECRET: ${JWT_SECRET:-JKH87sdf98sdfKJH98SDFkjsdf87sdfJHGF98sd7f6sd8F7G65fd4s65df4s6df4}
+      JWT_SECRET: JKH87sdf98sdfKJH98SDFkjsdf87sdfJHGF98sd7f6sd8F7G65fd4s65df4s6df4
     ports:
       - "8081:8081"
     depends_on:
@@ -137,7 +140,7 @@ services:
         condition: service_healthy
     networks:
       - kanban-network
-    restart: unless-stopped
+    restart: on-failure
 
   # ===========================================
   # Project Service
@@ -149,11 +152,15 @@ services:
     container_name: project-service
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_APPLICATION_NAME: project-service
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      EUREKA_URI: http://eureka-server:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:postgresql://project-db:5432/project_db
       SPRING_DATASOURCE_USERNAME: project_user
       SPRING_DATASOURCE_PASSWORD: project_pass
+      SPRING_MAIL_USERNAME: laravelinfo24@gmail.com
+      SPRING_MAIL_PASSWORD: pzjn tyay oucb fjwm
+      APP_FRONTEND_URL: http://localhost
     ports:
       - "8082:8082"
     depends_on:
@@ -165,7 +172,7 @@ services:
         condition: service_healthy
     networks:
       - kanban-network
-    restart: unless-stopped
+    restart: on-failure
 
   # ===========================================
   # Task Service
@@ -177,8 +184,9 @@ services:
     container_name: task-service
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      SPRING_APPLICATION_NAME: task-service
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      EUREKA_URI: http://eureka-server:8761/eureka/
       SPRING_DATASOURCE_URL: jdbc:postgresql://task-db:5432/task_db
       SPRING_DATASOURCE_USERNAME: task_user
       SPRING_DATASOURCE_PASSWORD: task_pass
@@ -193,7 +201,7 @@ services:
         condition: service_healthy
     networks:
       - kanban-network
-    restart: unless-stopped
+    restart: on-failure
 
   # ===========================================
   # API Gateway
@@ -205,9 +213,11 @@ services:
     container_name: api-gateway
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SPRING_CONFIG_IMPORT: configserver:http://config-server:8888
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-      JWT_SECRET: ${JWT_SECRET:-JKH87sdf98sdfKJH98SDFkjsdf87sdfJHGF98sd7f6sd8F7G65fd4s65df4s6df4}
+      SPRING_APPLICATION_NAME: api-gateway
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      EUREKA_URI: http://eureka-server:8761/eureka/
+      JWT_SECRET: JKH87sdf98sdfKJH98SDFkjsdf87sdfJHGF98sd7f6sd8F7G65fd4s65df4s6df4
+      FRONTEND_URL: http://localhost
     ports:
       - "8222:8222"
     depends_on:
@@ -223,20 +233,19 @@ services:
         condition: service_started
     networks:
       - kanban-network
-    restart: unless-stopped
+    restart: on-failure
 
   # ===========================================
   # Frontend
   # ===========================================
   frontend:
     build:
-      context: ./frontend
+      context: ./kanban-frontend
       dockerfile: Dockerfile
     container_name: kanban-frontend
     ports:
       - "80:80"
       - "443:443"
-      - "4200:4200"
     depends_on:
       - api-gateway
     networks:
