@@ -1,0 +1,269 @@
+version: '3.8'
+
+services:
+  # ===========================================
+  # Config Server - MUST START FIRST
+  # ===========================================
+  config-server:
+    image: ismaildeploy/kanban-config-server:latest
+    build:
+      context: ./config-server
+      dockerfile: Dockerfile
+    container_name: config-server
+    environment:
+      SPRING_PROFILES_ACTIVE: native
+      SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS: file:///config-repo
+    volumes:
+      - ./config-repo:/config-repo:ro
+    ports:
+      - "8888:8888"
+    networks:
+      - kanban-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8888/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  # ===========================================
+  # Eureka Server - START AFTER CONFIG
+  # ===========================================
+  eureka-server:
+    image: ismaildeploy/kanban-eureka-server:latest
+    build:
+      context: ./eureka-server
+      dockerfile: Dockerfile
+    container_name: eureka-server
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      SPRING_APPLICATION_NAME: eureka-server
+    ports:
+      - "8761:8761"
+    depends_on:
+      config-server:
+        condition: service_healthy
+    networks:
+      - kanban-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8761/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    restart: on-failure
+
+  # ===========================================
+  # PostgreSQL Databases
+  # ===========================================
+  auth-db:
+    image: postgres:15-alpine
+    container_name: auth-db
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: auth_user
+      POSTGRES_PASSWORD: auth_pass
+    volumes:
+      - auth_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - kanban-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U auth_user -d auth_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  project-db:
+    image: postgres:15-alpine
+    container_name: project-db
+    environment:
+      POSTGRES_DB: project_db
+      POSTGRES_USER: project_user
+      POSTGRES_PASSWORD: project_pass
+    volumes:
+      - project_data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    networks:
+      - kanban-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U project_user -d project_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  task-db:
+    image: postgres:15-alpine
+    container_name: task-db
+    environment:
+      POSTGRES_DB: task_db
+      POSTGRES_USER: task_user
+      POSTGRES_PASSWORD: task_pass
+    volumes:
+      - task_data:/var/lib/postgresql/data
+    ports:
+      - "5435:5432"
+    networks:
+      - kanban-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U task_user -d task_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ===========================================
+  # Auth Service
+  # ===========================================
+  auth-service:
+    image: ismaildeploy/kanban-auth-service:latest
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_APPLICATION_NAME: auth-service
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      EUREKA_URI: http://eureka-server:8761/eureka/
+      SPRING_DATASOURCE_URL: jdbc:postgresql://auth-db:5432/auth_db
+      SPRING_DATASOURCE_USERNAME: auth_user
+      SPRING_DATASOURCE_PASSWORD: auth_pass
+      JWT_SECRET: JKH87sdf98sdfKJH98SDFkjsdf87sdfJHGF98sd7f6sd8F7G65fd4s65df4s6df4
+    ports:
+      - "8081:8081"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      auth-db:
+        condition: service_healthy
+    networks:
+      - kanban-network
+    restart: on-failure
+
+  # ===========================================
+  # Project Service
+  # ===========================================
+  project-service:
+    image: ismaildeploy/kanban-project-service:latest
+    build:
+      context: ./project-service
+      dockerfile: Dockerfile
+    container_name: project-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_APPLICATION_NAME: project-service
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      EUREKA_URI: http://eureka-server:8761/eureka/
+      SPRING_DATASOURCE_URL: jdbc:postgresql://project-db:5432/project_db
+      SPRING_DATASOURCE_USERNAME: project_user
+      SPRING_DATASOURCE_PASSWORD: project_pass
+      SPRING_MAIL_USERNAME: laravelinfo24@gmail.com
+      SPRING_MAIL_PASSWORD: pzjn tyay oucb fjwm
+      APP_FRONTEND_URL: http://localhost
+    ports:
+      - "8082:8082"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      project-db:
+        condition: service_healthy
+    networks:
+      - kanban-network
+    restart: on-failure
+
+  # ===========================================
+  # Task Service
+  # ===========================================
+  task-service:
+    image: ismaildeploy/kanban-task-service:latest
+    build:
+      context: ./task-service
+      dockerfile: Dockerfile
+    container_name: task-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_APPLICATION_NAME: task-service
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      EUREKA_URI: http://eureka-server:8761/eureka/
+      SPRING_DATASOURCE_URL: jdbc:postgresql://task-db:5432/task_db
+      SPRING_DATASOURCE_USERNAME: task_user
+      SPRING_DATASOURCE_PASSWORD: task_pass
+    ports:
+      - "8083:8083"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      task-db:
+        condition: service_healthy
+    networks:
+      - kanban-network
+    restart: on-failure
+
+  # ===========================================
+  # API Gateway
+  # ===========================================
+  api-gateway:
+    image: ismaildeploy/kanban-api-gateway:latest
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_APPLICATION_NAME: api-gateway
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      EUREKA_URI: http://eureka-server:8761/eureka/
+      JWT_SECRET: JKH87sdf98sdfKJH98SDFkjsdf87sdfJHGF98sd7f6sd8F7G65fd4s65df4s6df4
+      FRONTEND_URL: http://localhost
+    ports:
+      - "8222:8222"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+      project-service:
+        condition: service_started
+      task-service:
+        condition: service_started
+    networks:
+      - kanban-network
+    restart: on-failure
+
+  # ===========================================
+  # Frontend
+  # ===========================================
+  frontend:
+    image: ismaildeploy/kanban-frontend:latest
+    build:
+      context: ./kanban-frontend
+      dockerfile: Dockerfile
+    container_name: kanban-frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - api-gateway
+    networks:
+      - kanban-network
+    restart: unless-stopped
+
+volumes:
+  auth_data:
+  project_data:
+  task_data:
+
+networks:
+  kanban-network:
+    driver: bridge
