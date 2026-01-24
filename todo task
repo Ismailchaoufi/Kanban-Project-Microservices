@@ -1,4 +1,3 @@
 problem :
 fix dashboard
-make nice style
-deploy the app
+deploy the app using docker kubernetes pipeline ci/cd (github actions) and Iac(terraforme)
