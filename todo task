@@ -1,3 +1,4 @@
 problem :
 fix dashboard
 deploy the app using docker kubernetes pipeline ci/cd (github actions) and Iac(terraforme)
+add notifications fonctionnality
