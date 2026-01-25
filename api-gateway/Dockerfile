@@ -17,34 +17,20 @@
 #EXPOSE 8222
 #ENTRYPOINT ["java", "-Xms256m", "-Xmx512m", "-jar", "/app/app.jar"]
 
-#For deploy in render
-# Multi-stage build
+#For deploy in failway
 FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
-
-# Copy pom.xml
 COPY pom.xml .
 RUN mvn dependency:go-offline -B
-
-# Copy source
 COPY src ./src
-
-# Build
 RUN mvn clean package -DskipTests
 
-# Runtime stage
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
-
-# Create user
 RUN addgroup -S spring && adduser -S spring -G spring
 USER spring:spring
-
-# Copy jar
 COPY --from=build /app/target/*.jar app.jar
 
-# Expose port
-EXPOSE ${PORT:-8080}
-
-# Run with PORT environment variable
-ENTRYPOINT ["sh", "-c", "java -Xmx300m -Xms256m -Dserver.port=${PORT:-8080} -jar /app/app.jar"]
+# Important: Use PORT environment variable
+EXPOSE ${PORT:-8222}
+ENTRYPOINT ["sh", "-c", "java -Xmx400m -Xms256m -Dserver.port=${PORT:-8222} -jar /app/app.jar"]
