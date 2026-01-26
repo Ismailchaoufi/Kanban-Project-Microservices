@@ -360,14 +360,6 @@ Contributions are welcome! Please follow these steps:
 - Add tests for new features
 - Update documentation as needed
 
----
-
-## 📄 License
-
-This project is open source and available under the [MIT License](LICENSE).
-
----
-
 ## 👨‍💻 Author
 
 **Ismail Chaoufi**
