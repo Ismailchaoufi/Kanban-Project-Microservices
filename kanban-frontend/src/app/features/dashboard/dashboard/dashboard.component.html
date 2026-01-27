@@ -104,11 +104,15 @@
         </mat-card-title>
       </mat-card-header>
       <mat-card-content>
+        <!-- Always show chart container when totalTasks > 0 -->
         <div class="chart-container" *ngIf="totalTasks > 0; else noTasks">
-          <canvas baseChart
-                  [data]="pieChartData"
-                  [type]="'pie'"
-                  [options]="pieChartOptions">
+          <canvas
+            baseChart
+            [data]="pieChartData"
+            [type]="'pie'"
+            [options]="pieChartOptions"
+            [style.display]="'block'"
+            [style.height]="'250px'">
           </canvas>
           <div class="completion-badge">
             <div class="completion-circle">
@@ -135,8 +139,9 @@
         </mat-card-title>
       </mat-card-header>
       <mat-card-content>
-        <div class="tasks-list" *ngIf="myTasks.length > 0; else noMyTasks">
-          <div *ngFor="let task of myTasks" class="task-item">
+        <!-- Force render tasks list -->
+        <div class="tasks-list" *ngIf="myTasks && myTasks.length > 0; else noMyTasks">
+          <div *ngFor="let task of myTasks; trackBy: trackByTaskId" class="task-item">
             <div class="task-status-indicator" [class]="'status-' + task.status.toLowerCase()"></div>
             <div class="task-info">
               <h4 class="task-title">{{ task.title }}</h4>
