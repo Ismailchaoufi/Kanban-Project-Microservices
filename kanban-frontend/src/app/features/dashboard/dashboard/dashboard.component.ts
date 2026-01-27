@@ -15,10 +15,27 @@ import {Router} from '@angular/router';
 import {Task} from '../../../core/models/task.model';
 import {ProjectFormComponent} from '../../projects/project-form/project-form.component';
 import {MatDialog} from '@angular/material/dialog';
-import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
 
-// Register Chart.js components
-Chart.register(ArcElement, Tooltip, Legend);
+// ✅ IMPORTANT: Import ALL necessary Chart.js components
+import {
+  Chart,
+  ArcElement,
+  Tooltip,
+  Legend,
+  PieController,  // This is REQUIRED for pie charts!
+  CategoryScale,
+  LinearScale
+} from 'chart.js';
+
+// ✅ Register ALL Chart.js components
+Chart.register(
+  ArcElement,
+  Tooltip,
+  Legend,
+  PieController,  // Must register the PieController!
+  CategoryScale,
+  LinearScale
+);
 
 @Component({
   selector: 'app-dashboard',
@@ -50,13 +67,15 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   recentProjects: Project[] = [];
   myTasks: Task[] = [];
 
+  // Initialize with empty data
   public pieChartData: ChartData<'pie'> = {
     labels: ['To Do', 'In Progress', 'Done'],
     datasets: [{
       data: [0, 0, 0],
       backgroundColor: ['#ff9800', '#2196f3', '#4caf50'],
       borderWidth: 2,
-      borderColor: '#ffffff'
+      borderColor: '#ffffff',
+      hoverOffset: 4
     }]
   };
 
@@ -104,12 +123,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    // Force initial chart render after view is initialized
-    setTimeout(() => {
-      if (this.chart && this.totalTasks > 0) {
-        this.chart.update();
-      }
-    }, 100);
+    // Don't try to update chart here - data isn't loaded yet
+    // The chart will update when data loads in loadTasksForDashboard()
   }
 
   loadDashboardData(): void {
@@ -120,7 +135,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         this.recentProjects = response.content.slice(0, 5);
         this.totalProjects = response.totalElements;
 
-        // Always load tasks, even if no projects
+        // Always load tasks
         this.loadTasksForDashboard();
       },
       error: (err) => {
@@ -142,30 +157,35 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     this.taskService.getAllTasks(undefined, undefined, undefined, userId, undefined, 0, 100).subscribe({
       next: (response) => {
         const allTasks = response.content;
-        this.totalTasks = allTasks.length;
 
-        // Calculate task counts
+        // Update all task counts
+        this.totalTasks = allTasks.length;
         this.todoTasks = allTasks.filter(t => t.status === 'TODO').length;
         this.inProgressTasks = allTasks.filter(t => t.status === 'IN_PROGRESS').length;
         this.doneTasks = allTasks.filter(t => t.status === 'DONE').length;
-
-        // Set my tasks
         this.myTasks = allTasks.slice(0, 5);
 
-        // Update chart with new data
-        this.updateChart();
+        console.log('Tasks loaded:', {
+          total: this.totalTasks,
+          todo: this.todoTasks,
+          inProgress: this.inProgressTasks,
+          done: this.doneTasks,
+          myTasks: this.myTasks.length
+        });
 
+        // Update chart data
+        this.updateChartData();
+
+        // Mark loading as complete
         this.loading = false;
 
-        // Force change detection
+        // Force Angular to detect changes
         this.cdr.detectChanges();
 
-        // Force chart update after a short delay to ensure DOM is ready
+        // Give the DOM time to render, then update chart
         setTimeout(() => {
-          if (this.chart) {
-            this.chart.update();
-          }
-        }, 100);
+          this.forceChartUpdate();
+        }, 150);
       },
       error: (err) => {
         console.error('Error loading tasks:', err);
@@ -175,8 +195,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     });
   }
 
-  updateChart(): void {
-    // Create new chart data object (important for change detection)
+  updateChartData(): void {
+    // Create a completely NEW object (don't mutate)
     this.pieChartData = {
       labels: ['To Do', 'In Progress', 'Done'],
       datasets: [{
@@ -188,12 +208,21 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       }]
     };
 
-    // Trigger change detection
-    this.cdr.detectChanges();
+    console.log('Chart data updated:', this.pieChartData);
+  }
 
-    // Update the chart if it exists
+  forceChartUpdate(): void {
     if (this.chart) {
-      this.chart.chart?.update();
+      try {
+        // Try multiple update methods
+        this.chart.chart?.update('active');
+        this.chart.update();
+        console.log('Chart updated successfully');
+      } catch (error) {
+        console.error('Error updating chart:', error);
+      }
+    } else {
+      console.warn('Chart not found in ViewChild');
     }
   }
 

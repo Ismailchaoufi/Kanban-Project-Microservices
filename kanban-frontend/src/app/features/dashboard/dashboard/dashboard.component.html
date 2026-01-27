@@ -104,23 +104,23 @@
         </mat-card-title>
       </mat-card-header>
       <mat-card-content>
-        <!-- Always show chart container when totalTasks > 0 -->
-        <div class="chart-container" *ngIf="totalTasks > 0; else noTasks">
-          <canvas
-            baseChart
-            [data]="pieChartData"
-            [type]="'pie'"
-            [options]="pieChartOptions"
-            [style.display]="'block'"
-            [style.height]="'250px'">
-          </canvas>
+        <!-- Show chart only when we have tasks -->
+        <ng-container *ngIf="totalTasks > 0; else noTasks">
+          <div class="chart-container">
+            <canvas
+              baseChart
+              [data]="pieChartData"
+              [type]="'pie'"
+              [options]="pieChartOptions">
+            </canvas>
+          </div>
           <div class="completion-badge">
             <div class="completion-circle">
               <span class="completion-value">{{ getCompletionPercentage() }}%</span>
             </div>
             <p class="completion-label">Completion Rate</p>
           </div>
-        </div>
+        </ng-container>
         <ng-template #noTasks>
           <div class="empty-state">
             <mat-icon>assignment</mat-icon>
@@ -139,24 +139,25 @@
         </mat-card-title>
       </mat-card-header>
       <mat-card-content>
-        <!-- Force render tasks list -->
-        <div class="tasks-list" *ngIf="myTasks && myTasks.length > 0; else noMyTasks">
-          <div *ngFor="let task of myTasks; trackBy: trackByTaskId" class="task-item">
-            <div class="task-status-indicator" [class]="'status-' + task.status.toLowerCase()"></div>
-            <div class="task-info">
-              <h4 class="task-title">{{ task.title }}</h4>
-              <p class="task-desc">{{ task.description || 'No description' }}</p>
-            </div>
-            <div class="task-meta">
-              <mat-chip [class]="'priority-chip priority-' + task.priority.toLowerCase()">
-                {{ task.priority }}
-              </mat-chip>
-              <mat-chip [class]="'status-chip status-' + task.status.toLowerCase()">
-                {{ task.status.replace('_', ' ') }}
-              </mat-chip>
+        <ng-container *ngIf="myTasks && myTasks.length > 0; else noMyTasks">
+          <div class="tasks-list">
+            <div *ngFor="let task of myTasks; trackBy: trackByTaskId" class="task-item">
+              <div class="task-status-indicator" [class]="'status-' + task.status.toLowerCase()"></div>
+              <div class="task-info">
+                <h4 class="task-title">{{ task.title }}</h4>
+                <p class="task-desc">{{ task.description || 'No description' }}</p>
+              </div>
+              <div class="task-meta">
+                <mat-chip [class]="'priority-chip priority-' + task.priority.toLowerCase()">
+                  {{ task.priority }}
+                </mat-chip>
+                <mat-chip [class]="'status-chip status-' + task.status.toLowerCase()">
+                  {{ task.status.replace('_', ' ') }}
+                </mat-chip>
+              </div>
             </div>
           </div>
-        </div>
+        </ng-container>
         <ng-template #noMyTasks>
           <div class="empty-state">
             <mat-icon>inbox</mat-icon>
@@ -168,6 +169,7 @@
   </div>
 </div>
 
+<!-- Loading State -->
 <div class="loading-container" *ngIf="loading">
   <mat-spinner diameter="50"></mat-spinner>
   <p>Loading dashboard...</p>
