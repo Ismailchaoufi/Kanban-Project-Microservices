@@ -37,16 +37,11 @@ public class InvitationService {
      * - If user exists, adds them directly
      * - If user doesn't exist, creates a pending invitation
      *
-     * @param projectId Project ID
-     * @param request Invitation request with email
-     * @param inviterId ID of the user making the invitation
-     * @param inviterRole Role of the inviter (ADMIN or USER)
-     * @return Invitation response with status
      */
     @Transactional
     public InvitationResponse inviteMember(Long projectId, InvitationRequest request, Long inviterId, String inviterRole) {
 
-        // FIX #1: Verify permissions BEFORE any other operations
+        // Verify permissions BEFORE any other operations
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
@@ -57,13 +52,13 @@ public class InvitationService {
             throw new ForbiddenException("Only the project owner or admin can invite members");
         }
 
-        // FIX #7: Validate email format
+        // Validate email format
         String email = request.getEmail().toLowerCase().trim();
         if (!isValidEmail(email)) {
             throw new BadRequestException("Invalid email format");
         }
 
-        // FIX #4: Use database constraint to prevent race condition
+        // Use database constraint to prevent race condition
         // The database should have a UNIQUE constraint on (projectId, email, status='PENDING')
         if (invitationRepository.existsByProjectIdAndEmailAndStatus(projectId, email, InvitationStatus.PENDING)) {
             throw new BadRequestException("Invitation already sent to this email");
@@ -75,7 +70,7 @@ public class InvitationService {
 
             // User exists → add directly
             projectService.addMemberFromInvitation(projectId, user.getId());
-            // FIX #9: Send email asynchronously (already marked with @Async)
+            // Send email asynchronously (already marked with @Async)
             emailService.sendDirectAddEmail(email, projectId, project.getTitle());
 
             log.info("User {} added directly to project {}", user.getId(), projectId);
@@ -98,7 +93,7 @@ public class InvitationService {
 
             invitationRepository.save(invitation);
 
-            // FIX #9: Send email asynchronously
+            // Send email asynchronously
             emailService.sendInvitationEmail(invitation, project.getTitle());
 
             log.info("Invitation created for {} to project {}", email, projectId);
@@ -116,9 +111,6 @@ public class InvitationService {
      * - Checks if the invitation is still valid (not expired, not already accepted)
      * - Verifies email matches the authenticated user
      * - Adds user as a project member
-     *
-     * @param token Invitation token
-     * @param userId ID of the authenticated user
      */
     @Transactional
     public void acceptInvitation(String token, Long userId) {
@@ -141,7 +133,7 @@ public class InvitationService {
         // Verify user exists and get their details
         UserDTO user = authServiceClient.getUserByIdInternal(userId);
 
-        // FIX #13: Verify email matches (case-insensitive)
+        // Verify email matches (case-insensitive)
         if (!user.getEmail().equalsIgnoreCase(invitation.getEmail())) {
             log.warn("Email mismatch: invitation for {}, user has {}", invitation.getEmail(), user.getEmail());
             throw new BadRequestException("This invitation was sent to a different email address");
@@ -162,9 +154,6 @@ public class InvitationService {
      * - Returns project details
      * - Shows inviter information
      * - Indicates if invitation is still valid
-     *
-     * @param token Invitation token
-     * @return Invitation information
      */
     @Transactional(readOnly = true)
     public InvitationInfoResponse getInvitationInfo(String token) {
@@ -174,7 +163,7 @@ public class InvitationService {
         Project project = projectRepository.findById(invitation.getProjectId())
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
-        // FIX #13: Check if invitation is in a valid state
+        // Check if invitation is in a valid state
         if (invitation.getStatus() != InvitationStatus.PENDING) {
             log.warn("Requested info for non-pending invitation: {}", token);
         }
