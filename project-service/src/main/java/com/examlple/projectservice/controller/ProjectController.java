@@ -21,6 +21,10 @@ public class ProjectController {
     private final ProjectService projectService;
     private final InvitationService invitationService;
 
+    /**
+     * Create a new project
+     * The authenticated user becomes the project owner
+     */
     @PostMapping
     public ResponseEntity<ProjectResponse> createProject(
             @Valid @RequestBody ProjectRequest request,
@@ -29,6 +33,11 @@ public class ProjectController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    /**
+     * Get all projects
+     * - ADMIN sees all projects
+     * - USER sees only their own projects (as owner or member)
+     */
     @GetMapping
     public ResponseEntity<Page<ProjectResponse>> getAllProjects(
             @RequestHeader("X-User-Id") Long userId,
@@ -38,6 +47,10 @@ public class ProjectController {
         return ResponseEntity.ok(projects);
     }
 
+    /**
+     * Get a specific project by ID
+     * User must be owner, member, or admin
+     */
     @GetMapping("/{id}")
     public ResponseEntity<ProjectResponse> getProjectById(
             @PathVariable Long id,
@@ -47,6 +60,10 @@ public class ProjectController {
         return ResponseEntity.ok(project);
     }
 
+    /**
+     * Update a project
+     * Only the project owner or admin can update
+     */
     @PutMapping("/{id}")
     public ResponseEntity<ProjectResponse> updateProject(
             @PathVariable Long id,
@@ -57,6 +74,11 @@ public class ProjectController {
         return ResponseEntity.ok(project);
     }
 
+    /**
+     * Delete a project
+     * Only the project owner or admin can delete
+     * This will cascade delete associated members and invitations
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProject(
             @PathVariable Long id,
@@ -66,6 +88,10 @@ public class ProjectController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Add a member to a project
+     * Only the project owner or admin can add members
+     */
     @PostMapping("/{id}/members")
     public ResponseEntity<MemberResponse> addMember(
             @PathVariable Long id,
@@ -76,6 +102,10 @@ public class ProjectController {
         return ResponseEntity.status(HttpStatus.CREATED).body(member);
     }
 
+    /**
+     * Get all members of a project
+     * User must be owner, member, or admin to view members
+     */
     @GetMapping("/{id}/members")
     public ResponseEntity<List<MemberResponse>> getProjectMembers(
             @PathVariable Long id,
@@ -85,6 +115,11 @@ public class ProjectController {
         return ResponseEntity.ok(members);
     }
 
+    /**
+     * Remove a member from a project
+     * Only the project owner or admin can remove members
+     * The project owner cannot be removed
+     */
     @DeleteMapping("/{id}/members/{userId}")
     public ResponseEntity<Void> removeMember(
             @PathVariable Long id,
@@ -95,6 +130,11 @@ public class ProjectController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Get project statistics
+     * Shows task counts and member count
+     * User must be owner, member, or admin
+     */
     @GetMapping("/{id}/stats")
     public ResponseEntity<ProjectStatsResponse> getProjectStats(
             @PathVariable Long id,
@@ -105,7 +145,11 @@ public class ProjectController {
     }
 
     /**
-     * Inviter un membre (OWNER ou ADMIN uniquement)
+     * Invite a member to a project
+     * Only the project owner or admin can send invitations
+     *
+     * - If the user exists: adds them directly
+     * - If the user doesn't exist: creates a pending invitation
      */
     @PostMapping("/{projectId}/invite")
     public ResponseEntity<InvitationResponse> inviteMember(
@@ -118,43 +162,9 @@ public class ProjectController {
                 projectId,
                 request,
                 userId,
-                role  // 🔑 Passer le rôle pour vérification
+                role
         );
 
         return ResponseEntity.ok(response);
     }
-
-//    /**
-//     * Accepter une invitation (accessible à tous les utilisateurs authentifiés)
-//     */
-//    @PostMapping("/invitations/accept")
-//    public ResponseEntity<String> acceptInvitation(
-//            @RequestParam String token,
-//            @RequestHeader("X-User-Id") Long userId
-//    ) {
-//        invitationService.acceptInvitation(token, userId);
-//        return ResponseEntity.ok("Invitation accepted successfully");
-//    }
-//
-//    /**
-//     * Vérifier un token d'invitation (PUBLIC - pas besoin d'authentification)
-//     */
-//    @GetMapping("/invitations/verify")
-//    public ResponseEntity<InvitationInfoResponse> verifyInvitation(@RequestParam String token) {
-//        InvitationInfoResponse info = invitationService.getInvitationInfo(token);
-//        return ResponseEntity.ok(info);
-//    }
-
-//    /**
-//     * Annuler une invitation (OWNER ou ADMIN uniquement)
-//     */
-//    @DeleteMapping("/invitations/{invitationId}")
-//    public ResponseEntity<Void> cancelInvitation(
-//            @PathVariable Long invitationId,
-//            @RequestHeader("X-User-Id") Long userId,
-//            @RequestHeader("X-User-Role") String role
-//    ) {
-//        invitationService.cancelInvitation(invitationId, userId, role);
-//        return ResponseEntity.noContent().build();
-//    }
 }
