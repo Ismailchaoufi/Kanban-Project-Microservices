@@ -27,17 +27,17 @@ public class TaskService {
     private final AuthServiceClient authServiceClient;
 
     /**
-     * Créer une nouvelle tâche uniquement si :
-         * Le projet existe
-         * L’utilisateur a accès au projet
-         * L’utilisateur assigné existe (si fourni)
+     * Create a new task only if:
+     * - The project exists
+     * - The user has access to the project
+     * - The assigned user exists (if provided)
      */
     @Transactional
     public TaskResponse createTask(TaskRequest request, Long userId, String role) {
-        // Vérifie que le projet existe + que l'utilisateur y a accès
-        ProjectDTO project = verifyProjectAccess(request.getProjectId(), userId, role);
+        // Verify that the project exists and user has access
+        verifyProjectAccess(request.getProjectId(), userId, role);
 
-        // Vérifie que l'utilisateur assigné existe
+        // Verify that the assigned user exists
         if (request.getAssignedTo() != null) {
             verifyUserExists(request.getAssignedTo(), userId, role);
         }
@@ -54,18 +54,17 @@ public class TaskService {
         Task savedTask = taskRepository.save(task);
         log.info("Task created successfully with ID: {}", savedTask.getId());
 
-        // Conversion entité → DTO
         return mapToTaskResponse(savedTask, userId, role);
     }
 
     /**
-     * Récupérer les tâches avec filtres dynamiques :
-         * Par projet
-         * Par statut
-         * Par priorité
-         * Par utilisateur assigné
-         * Recherche texte
-         * Pagination
+     * Retrieve tasks with dynamic filters:
+     * - By project
+     * - By status
+     * - By priority
+     * - By assigned user
+     * - Text search
+     * - Pagination
      */
     @Transactional(readOnly = true)
     public Page<TaskResponse> getAllTasks(Long projectId, TaskStatus status, Priority priority,
@@ -105,36 +104,36 @@ public class TaskService {
     }
 
     /**
-     * Récupérer une tâche par ID si l’utilisateur a accès au projet
+     * Retrieve a task by ID if the user has access to the project
      */
     @Transactional(readOnly = true)
     public TaskResponse getTaskById(Long taskId, Long userId, String role) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
 
-        // Vérifie que l'utilisateur y a accès
+        // Verify user has access
         verifyProjectAccess(task.getProjectId(), userId, role);
 
         return mapToTaskResponse(task, userId, role);
     }
 
     /**
-     * Modifier une tâche (mise à jour partielle)
+     * Update a task (partial update)
      */
     @Transactional
     public TaskResponse updateTask(Long taskId, TaskRequest request, Long userId, String role) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
 
-        // Vérifie accès au projet
+        // Verify access to project
         verifyProjectAccess(task.getProjectId(), userId, role);
 
-        // Vérifie l'utilisateur assigné
+        // Verify assigned user
         if (request.getAssignedTo() != null) {
             verifyUserExists(request.getAssignedTo(), userId, role);
         }
 
-        // Mise à jour champ par champ
+        // Update fields one by one
         if (request.getTitle() != null) {
             task.setTitle(request.getTitle());
         }
@@ -161,7 +160,7 @@ public class TaskService {
     }
 
     /**
-     * Changer uniquement le statut d’une tâche
+     * Change only the status of a task
      * Kanban (drag & drop)
      */
     @Transactional
@@ -180,8 +179,8 @@ public class TaskService {
     }
 
     /**
-     * Supprimer une tâche
-     * Seulement le owner du projet ou ADMIN
+     * Delete a task
+     * Only the project owner or ADMIN
      */
     @Transactional
     public void deleteTask(Long taskId, Long userId, String role) {
@@ -199,11 +198,10 @@ public class TaskService {
     }
 
     /**
-     * Statistiques Kanban par projet (dashboard)
+     * Kanban statistics by project (dashboard)
      */
     @Transactional(readOnly = true)
     public TaskStatsResponse getTaskStatsByProject(Long projectId, Long userId, String role) {
-
         verifyProjectAccess(projectId, userId, role);
 
         Long totalTasks = taskRepository.countByProjectId(projectId);
@@ -221,26 +219,32 @@ public class TaskService {
     }
 
     /**
-     * Vérifier accès au projet
+     * Verify access to project
      */
     private ProjectDTO verifyProjectAccess(Long projectId, Long userId, String role) {
         try {
             return projectServiceClient.getProjectById(projectId, userId, role);
         } catch (Exception e) {
-            log.error("Failed to verify project access for projectId: {}", projectId);
+            log.error("Failed to verify project access for projectId: {}", projectId, e);
             throw new BadRequestException("Project not found or access denied");
         }
     }
 
+    /**
+     * Verify that a user exists
+     */
     private void verifyUserExists(Long userIdToVerify, Long requesterId, String role) {
         try {
             authServiceClient.getUserById(userIdToVerify, requesterId, role);
         } catch (Exception e) {
-            log.error("Failed to verify user exists for userId: {}", userIdToVerify);
+            log.error("Failed to verify user exists for userId: {}", userIdToVerify, e);
             throw new BadRequestException("User not found");
         }
     }
 
+    /**
+     * Map Task entity to TaskResponse DTO
+     */
     private TaskResponse mapToTaskResponse(Task task, Long userId, String role) {
         AssignedUserDTO assignedUser = null;
 
@@ -255,7 +259,7 @@ public class TaskService {
                         .avatarUrl(user.getAvatarUrl())
                         .build();
             } catch (Exception e) {
-                log.error("Failed to fetch assigned user details for userId: {}", task.getAssignedTo());
+                log.error("Failed to fetch assigned user details for userId: {}", task.getAssignedTo(), e);
             }
         }
 
