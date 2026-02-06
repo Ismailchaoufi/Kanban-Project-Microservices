@@ -27,17 +27,17 @@ public class TaskService {
     private final AuthServiceClient authServiceClient;
 
     /**
-     * Create a new task only if:
-     * - The project exists
-     * - The user has access to the project
-     * - The assigned user exists (if provided)
+     * Créer une nouvelle tâche uniquement si :
+     * - Le projet existe
+     * - L'utilisateur a accès au projet
+     * - L'utilisateur assigné existe (si fourni)
      */
     @Transactional
     public TaskResponse createTask(TaskRequest request, Long userId, String role) {
-        // Verify that the project exists and user has access
+        // Vérifie que le projet existe + que l'utilisateur y a accès
         verifyProjectAccess(request.getProjectId(), userId, role);
 
-        // Verify that the assigned user exists
+        // Vérifie que l'utilisateur assigné existe
         if (request.getAssignedTo() != null) {
             verifyUserExists(request.getAssignedTo(), userId, role);
         }
@@ -54,16 +54,17 @@ public class TaskService {
         Task savedTask = taskRepository.save(task);
         log.info("Task created successfully with ID: {}", savedTask.getId());
 
+        // Conversion entité → DTO
         return mapToTaskResponse(savedTask, userId, role);
     }
 
     /**
-     * Retrieve tasks with dynamic filters:
-     * - By project
-     * - By status
-     * - By priority
-     * - By assigned user
-     * - Text search
+     * Récupérer les tâches avec filtres dynamiques :
+     * - Par projet
+     * - Par statut
+     * - Par priorité
+     * - Par utilisateur assigné
+     * - Recherche texte
      * - Pagination
      */
     @Transactional(readOnly = true)
@@ -104,36 +105,36 @@ public class TaskService {
     }
 
     /**
-     * Retrieve a task by ID if the user has access to the project
+     * Récupérer une tâche par ID si l'utilisateur a accès au projet
      */
     @Transactional(readOnly = true)
     public TaskResponse getTaskById(Long taskId, Long userId, String role) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
 
-        // Verify user has access
+        // Vérifie que l'utilisateur y a accès
         verifyProjectAccess(task.getProjectId(), userId, role);
 
         return mapToTaskResponse(task, userId, role);
     }
 
     /**
-     * Update a task (partial update)
+     * Modifier une tâche (mise à jour partielle)
      */
     @Transactional
     public TaskResponse updateTask(Long taskId, TaskRequest request, Long userId, String role) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
 
-        // Verify access to project
+        // Vérifie accès au projet
         verifyProjectAccess(task.getProjectId(), userId, role);
 
-        // Verify assigned user
+        // Vérifie l'utilisateur assigné
         if (request.getAssignedTo() != null) {
             verifyUserExists(request.getAssignedTo(), userId, role);
         }
 
-        // Update fields one by one
+        // Mise à jour champ par champ
         if (request.getTitle() != null) {
             task.setTitle(request.getTitle());
         }
@@ -160,7 +161,7 @@ public class TaskService {
     }
 
     /**
-     * Change only the status of a task
+     * Changer uniquement le statut d'une tâche
      * Kanban (drag & drop)
      */
     @Transactional
@@ -179,8 +180,8 @@ public class TaskService {
     }
 
     /**
-     * Delete a task
-     * Only the project owner or ADMIN
+     * Supprimer une tâche
+     * Seulement le owner du projet ou ADMIN
      */
     @Transactional
     public void deleteTask(Long taskId, Long userId, String role) {
@@ -198,7 +199,7 @@ public class TaskService {
     }
 
     /**
-     * Kanban statistics by project (dashboard)
+     * Statistiques Kanban par projet (dashboard)
      */
     @Transactional(readOnly = true)
     public TaskStatsResponse getTaskStatsByProject(Long projectId, Long userId, String role) {
@@ -219,7 +220,7 @@ public class TaskService {
     }
 
     /**
-     * Verify access to project
+     * Vérifier accès au projet
      */
     private ProjectDTO verifyProjectAccess(Long projectId, Long userId, String role) {
         try {
@@ -230,9 +231,6 @@ public class TaskService {
         }
     }
 
-    /**
-     * Verify that a user exists
-     */
     private void verifyUserExists(Long userIdToVerify, Long requesterId, String role) {
         try {
             authServiceClient.getUserById(userIdToVerify, requesterId, role);
@@ -242,9 +240,6 @@ public class TaskService {
         }
     }
 
-    /**
-     * Map Task entity to TaskResponse DTO
-     */
     private TaskResponse mapToTaskResponse(Task task, Long userId, String role) {
         AssignedUserDTO assignedUser = null;
 
