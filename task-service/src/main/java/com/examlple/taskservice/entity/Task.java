@@ -27,9 +27,10 @@ public class Task {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private TaskStatus status = TaskStatus.TODO;
+    // Changed from enum to entity reference
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "status_id", nullable = false)
+    private TaskStatusEntity status;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -43,6 +44,9 @@ public class Task {
 
     @Column
     private Long assignedTo;
+
+    @Column(nullable = false)
+    private Integer position = 0; // For ordering within a column
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
