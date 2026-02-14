@@ -46,7 +46,7 @@ public class Task {
     private Long assignedTo;
 
     @Column(nullable = false)
-    private Integer position = 0; // For ordering within a column
+    private Integer position = 0;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

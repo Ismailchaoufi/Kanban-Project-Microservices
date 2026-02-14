@@ -7,6 +7,9 @@ import lombok.Data;
 @Data
 public class UpdateStatusRequest {
 
-    @NotNull(message = "Status is required")
-    private TaskStatus status;
+    @NotNull(message = "Status ID is required")
+    private Long statusId;
+
+    // Position dans la nouvelle colonne (optionnel)
+    private Integer position;
 }

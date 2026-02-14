@@ -34,7 +34,7 @@ public class TaskController {
     @GetMapping
     public ResponseEntity<Page<TaskResponse>> getAllTasks(
             @RequestParam(required = false) Long projectId,
-            @RequestParam(required = false) TaskStatus status,
+            @RequestParam(required = false) Long statusId,
             @RequestParam(required = false) Priority priority,
             @RequestParam(required = false) Long assignedTo,
             @RequestParam(required = false) String search,
@@ -42,7 +42,7 @@ public class TaskController {
             @RequestHeader("X-User-Role") String role,
             Pageable pageable) {
         Page<TaskResponse> tasks = taskService.getAllTasks(
-                projectId, status, priority, assignedTo, search, userId, role, pageable);
+                projectId, statusId, priority, assignedTo, search, userId, role, pageable);
         return ResponseEntity.ok(tasks);
     }
 

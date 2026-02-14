@@ -18,11 +18,12 @@ public class TaskResponse {
     private Long id;
     private String title;
     private String description;
-    private TaskStatus status;
+    private StatusDTO status;
     private Priority priority;
     private LocalDate dueDate;
     private Long projectId;
     private AssignedUserDTO assignedUser;
+    private Integer position;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

@@ -18,7 +18,7 @@ public class TaskRequest {
 
     private String description;
 
-    private TaskStatus status;
+    private Long statusId;
 
     private Priority priority;
 
