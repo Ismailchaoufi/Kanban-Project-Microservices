@@ -16,7 +16,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,16 +31,19 @@ public class ProjectService {
     private final ProjectMemberRepository memberRepository;
     private final AuthServiceClient authServiceClient;
     private final TaskServiceClient taskServiceClient;
-
-
+    private final TaskStatusService taskStatusService;  // ← CHANGED: Use TaskStatusService directly
 
     /**
      * Créer un nouveau projet
      * - Le créateur devient automatiquement owner
      * - Transaction : soit tout passe, soit tout est annulé
+     * - Initialise automatiquement 3 statuts par défaut (To Do, In Progress, Done)
      */
     @Transactional
     public ProjectResponse createProject(ProjectRequest request, Long ownerId) {
+        log.info("Creating project for owner {}", ownerId);
+
+        // Créer le projet
         Project project = new Project();
         project.setTitle(request.getTitle());
         project.setDescription(request.getDescription());
@@ -52,9 +54,12 @@ public class ProjectService {
         project.setOwnerId(ownerId);
 
         Project savedProject = projectRepository.save(project);
+        log.info("Project created with ID: {}", savedProject.getId());
 
-        log.info("Project created successfully with ID: {}", savedProject.getId());
-        // Conversion entité → DTO pour la réponse
+        // TaskStatusService handles all status logic including initialization
+        taskStatusService.initializeDefaultStatuses(savedProject.getId());
+        log.info("Default task statuses initialized for project {}", savedProject.getId());
+
         return mapToProjectResponse(savedProject, ownerId, "USER");
     }
 
@@ -68,14 +73,11 @@ public class ProjectService {
         Page<Project> projects;
 
         if ("ADMIN".equals(role)) {
-            // Admin : accès global
             projects = projectRepository.findAll(pageable);
         } else {
-            // User : seulement les projets liés à lui
             projects = projectRepository.findByOwnerIdOrMemberId(userId, pageable);
         }
 
-        // Mapping vers DTO
         return projects.map(project -> mapToProjectResponse(project, userId, role));
     }
 
@@ -88,7 +90,6 @@ public class ProjectService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
-        // Vérification des droits d’accès
         if (!canAccessProject(project, userId, role)) {
             throw new ForbiddenException("You don't have permission to access this project");
         }
@@ -106,7 +107,6 @@ public class ProjectService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
-        // Vérification des droits
         if (!project.getOwnerId().equals(userId) && !"ADMIN".equals(role)) {
             throw new ForbiddenException("Only the project owner can update the project");
         }
@@ -140,19 +140,22 @@ public class ProjectService {
     /**
      * Supprimer un projet
      * - Seulement le owner ou ADMIN
+     * - Les statuts seront supprimés automatiquement (CASCADE DELETE)
      */
     @Transactional
     public void deleteProject(Long projectId, Long userId, String role) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
-        // Only owner can delete project
         if (!project.getOwnerId().equals(userId) && !"ADMIN".equals(role)) {
             throw new ForbiddenException("Only the project owner can delete the project");
         }
 
         projectRepository.delete(project);
-        log.info("Project {} deleted successfully", projectId);
+        log.info("Project {} deleted successfully (task statuses cascade deleted)", projectId);
+
+        // OPTIONAL: Publish event for Task Service to clean up tasks
+        // eventPublisher.publishEvent(new ProjectDeletedEvent(projectId));
     }
 
     /**
@@ -165,10 +168,7 @@ public class ProjectService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
-        //VÉRIFICATION DES PERMISSIONS
-        // Autoriser si :
-        // 1. Utilisateur est ADMIN (peut gérer tous les projets)
-        // 2. Utilisateur est le OWNER du projet
+        // Vérification des permissions
         boolean isAdmin = "ADMIN".equals(role);
         boolean isOwner = project.getOwnerId().equals(requesterId);
 
@@ -202,12 +202,14 @@ public class ProjectService {
         return mapToMemberResponse(savedMember, user);
     }
 
+    /**
+     * Récupérer les membres d'un projet
+     */
     @Transactional(readOnly = true)
     public List<MemberResponse> getProjectMembers(Long projectId, Long userId, String role) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
-        // Check authorization
         if (!canAccessProject(project, userId, role)) {
             throw new ForbiddenException("You don't have permission to access this project");
         }
@@ -228,12 +230,14 @@ public class ProjectService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Supprimer un membre d'un projet
+     */
     @Transactional
     public void removeMember(Long projectId, Long memberId, Long requesterId, String role) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
-        //Permissions
         boolean isAdmin = "ADMIN".equals(role);
         boolean isOwner = project.getOwnerId().equals(requesterId);
 
@@ -241,7 +245,6 @@ public class ProjectService {
             throw new ForbiddenException("Only the project owner or admin can remove members");
         }
 
-        //Le propriétaire ne peut pas se supprimer lui-même
         if (memberId.equals(project.getOwnerId())) {
             throw new BadRequestException("Cannot remove the project owner");
         }
@@ -264,21 +267,17 @@ public class ProjectService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
-        // Vérifie si l'utilisateur est déjà membre
         if (memberRepository.existsByProjectIdAndUserId(projectId, userId)) {
             throw new BadRequestException("User is already a member of this project");
         }
 
-        // Récupérer les infos utilisateur depuis Auth Service
         UserDTO user;
         try {
-            // Utiliser un appel système (bypass les permissions)
             user = authServiceClient.getUserByIdInternal(userId);
         } catch (Exception e) {
             throw new BadRequestException("User not found in the system");
         }
 
-        // Créer le membre
         ProjectMember member = new ProjectMember();
         member.setProject(project);
         member.setUserId(userId);
@@ -290,12 +289,14 @@ public class ProjectService {
         return mapToMemberResponse(savedMember, user);
     }
 
+    /**
+     * Récupérer les statistiques d'un projet
+     */
     @Transactional(readOnly = true)
     public ProjectStatsResponse getProjectStats(Long projectId, Long userId, String role) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
-        // Check authorization
         if (!canAccessProject(project, userId, role)) {
             throw new ForbiddenException("You don't have permission to access this project");
         }
@@ -305,7 +306,7 @@ public class ProjectService {
         try {
             taskStats = taskServiceClient.getTaskStatsByProject(projectId);
         } catch (Exception e) {
-            log.error("Failed to fetch task stats for project {}", projectId);
+            log.error("Failed to fetch task stats for project {}", projectId, e);
             taskStats = TaskStatsDTO.builder()
                     .projectId(projectId)
                     .totalTasks(0)
@@ -343,6 +344,9 @@ public class ProjectService {
         return memberRepository.existsByProjectIdAndUserId(project.getId(), userId);
     }
 
+    /**
+     * Mapper Project entity to ProjectResponse DTO
+     */
     private ProjectResponse mapToProjectResponse(Project project, Long userId, String role) {
         List<MemberResponse> members = project.getMembers().stream()
                 .map(member -> {
@@ -350,6 +354,7 @@ public class ProjectService {
                         UserDTO user = authServiceClient.getUserById(member.getUserId(), userId, role);
                         return mapToMemberResponse(member, user);
                     } catch (Exception e) {
+                        log.error("Failed to fetch user details for userId: {}", member.getUserId(), e);
                         return null;
                     }
                 })
@@ -371,6 +376,9 @@ public class ProjectService {
                 .build();
     }
 
+    /**
+     * Mapper ProjectMember to MemberResponse DTO
+     */
     private MemberResponse mapToMemberResponse(ProjectMember member, UserDTO user) {
         return MemberResponse.builder()
                 .id(member.getId())

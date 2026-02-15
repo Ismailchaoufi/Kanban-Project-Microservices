@@ -39,7 +39,7 @@ export class TaskService {
 
   getAllTasks(
     projectId?: number,
-    status?: TaskStatus,
+    statusId?: number,
     priority?: Priority,
     assignedTo?: number,
     search?: string,
@@ -80,8 +80,8 @@ export class TaskService {
       );
   }
 
-  updateTaskStatus(id: number, status: TaskStatus, projectId: number): Observable<Task> {
-    const request: UpdateStatusRequest = { status };
+  updateTaskStatus(id: number, statusId: number, projectId: number, position?: number ): Observable<Task> {
+    const request: UpdateStatusRequest = { statusId, position };
     return this.http.patch<Task>(`${this.apiUrl}/${id}/status`, request)
       .pipe(
         tap(() => this.refreshTasks(projectId))

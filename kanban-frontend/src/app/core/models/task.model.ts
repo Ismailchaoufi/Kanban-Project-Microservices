@@ -7,14 +7,29 @@ export interface Task {
   dueDate?: Date;
   projectId: number;
   assignedUser?: AssignedUser;
+  position: number;
   createdAt: Date;
   updatedAt: Date;
 }
 
-export enum TaskStatus {
-  TODO = 'TODO',
-  IN_PROGRESS = 'IN_PROGRESS',
-  DONE = 'DONE'
+export interface TaskStatus {
+  id: number;
+  name: string;
+  color: string;
+  projectId: number;
+  position: number;
+  isDefault: boolean;
+  taskCount?: number;
+}
+
+export interface TaskStatusRequest {
+  name: string;
+  color: string;
+  position?: number;
+}
+
+export interface ReorderStatusRequest {
+  statusIds: number[];
 }
 
 export enum Priority {
@@ -34,7 +49,7 @@ export interface AssignedUser {
 export interface TaskRequest {
   title: string;
   description?: string;
-  status?: TaskStatus;
+  statusId: number;
   priority?: Priority;
   dueDate?: Date;
   projectId: number;
@@ -42,5 +57,6 @@ export interface TaskRequest {
 }
 
 export interface UpdateStatusRequest {
-  status: TaskStatus;
+  statusId: number;
+  position?: number;
 }

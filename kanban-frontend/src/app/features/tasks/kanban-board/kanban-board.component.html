@@ -1,26 +1,56 @@
 <div class="kanban-board">
+  <!-- Board Header with Add Status Button -->
+  <div class="board-header">
+    <h2>Task Board</h2>
+    <button mat-raised-button color="primary" (click)="createStatus()" class="add-status-btn">
+      <mat-icon>add</mat-icon>
+      Add Status Column
+    </button>
+  </div>
+
   <div class="kanban-columns" *ngIf="!loading">
 
+    <!-- Existing Status Columns -->
     <div
       *ngFor="let column of columns; let i = index"
       class="kanban-column"
-      [style.border-top-color]="column.color">
+      [style.border-top-color]="column.status.color">
 
       <!-- Column Header -->
       <div class="column-header">
         <div class="column-title">
           <div
             class="column-indicator"
-            [style.background-color]="column.color">
+            [style.background-color]="column.status.color">
           </div>
 
-          <h3>{{ column.title }}</h3>
+          <h3>{{ column.status.name }}</h3>
           <span class="task-count">{{ column.tasks.length }}</span>
         </div>
 
-        <button mat-icon-button (click)="createTask()" *ngIf="column.id === 'TODO'">
-          <mat-icon>add</mat-icon>
+        <!-- Column Actions Menu -->
+        <button mat-icon-button [matMenuTriggerFor]="columnMenu" class="column-menu-btn">
+          <mat-icon>more_vert</mat-icon>
         </button>
+
+        <mat-menu #columnMenu="matMenu">
+          <button mat-menu-item (click)="createTask(column)">
+            <mat-icon>add</mat-icon>
+            <span>Add Task</span>
+          </button>
+          <button mat-menu-item (click)="editStatus(column.status, $event)">
+            <mat-icon>edit</mat-icon>
+            <span>Edit Status</span>
+          </button>
+          <button
+            mat-menu-item
+            (click)="deleteStatus(column, $event)"
+            [disabled]="columns.length <= 1"
+            class="delete-menu-item">
+            <mat-icon>delete</mat-icon>
+            <span>Delete Status</span>
+          </button>
+        </mat-menu>
       </div>
 
       <!-- Tasks List -->
@@ -29,13 +59,14 @@
         [id]="'cdk-drop-list-' + i"
         [cdkDropListData]="column.tasks"
         [cdkDropListConnectedTo]="getConnectedLists()"
-        (cdkDropListDropped)="drop($event, column.id)"
+        (cdkDropListDropped)="drop($event, column)"
         class="tasks-container">
 
         <!-- Tasks -->
         <div
           *ngFor="let task of column.tasks"
-          cdkDrag>
+          cdkDrag
+          class="task-item">
           <app-task-card
             [task]="task"
             (click)="onTaskClick(task)">
@@ -45,16 +76,27 @@
         <!-- Empty State -->
         <div class="empty-column" *ngIf="column.tasks.length === 0">
           <mat-icon>inbox</mat-icon>
-          <p>No tasks</p>
+          <p>No tasks yet</p>
+          <button mat-stroked-button color="primary" (click)="createTask(column)">
+            <mat-icon>add</mat-icon>
+            Add Task
+          </button>
         </div>
 
       </div>
     </div>
+
+    <!-- Add New Column Card (Optional visual) -->
+    <div class="add-column-card" (click)="createStatus()">
+      <mat-icon>add_circle_outline</mat-icon>
+      <p>Add Status</p>
+    </div>
+
   </div>
 
   <!-- Loading -->
   <div class="loading-state" *ngIf="loading">
     <mat-spinner diameter="50"></mat-spinner>
-    <p>Loading tasks...</p>
+    <p>Loading board...</p>
   </div>
 </div>
