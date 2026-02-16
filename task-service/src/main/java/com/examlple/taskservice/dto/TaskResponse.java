@@ -22,7 +22,7 @@ public class TaskResponse {
     private Priority priority;
     private LocalDate dueDate;
     private Long projectId;
-    private AssignedUserDTO assignedUser;
+    private Long assignedUser;
     private Integer position;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

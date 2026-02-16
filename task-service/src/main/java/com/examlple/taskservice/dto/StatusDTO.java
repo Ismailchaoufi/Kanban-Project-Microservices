@@ -14,8 +14,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class StatusDTO {
-
     private Long id;
     private String name;
     private String color;
+    private Long projectId;
+    private Integer position;
+    private Boolean isDefault;
 }

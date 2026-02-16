@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-class UpdateTaskStatusRequest {
+public class UpdateTaskStatusRequest {
     @NotNull(message = "Status ID is required")
     private Long statusId;
 

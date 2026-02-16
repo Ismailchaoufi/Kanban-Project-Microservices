@@ -11,6 +11,7 @@ import com.examlple.taskservice.exception.ForbiddenException;
 import com.examlple.taskservice.exception.ResourceNotFoundException;
 import com.examlple.taskservice.repository.TaskRepository;
 import com.examlple.taskservice.repository.TaskStatusRepository;
+import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -19,6 +20,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,162 +29,151 @@ import java.util.List;
 public class TaskService {
 
     private final TaskRepository taskRepository;
-    private final TaskStatusRepository taskStatusRepository;  // NOUVEAU
     private final ProjectServiceClient projectServiceClient;
-    private final AuthServiceClient authServiceClient;
 
     /**
-     * Créer une nouvelle tâche uniquement si :
-     * - Le projet existe
-     * - L'utilisateur a accès au projet
-     * - L'utilisateur assigné existe (si fourni)
-     * - Le statut existe et appartient au projet
+     * Créer une nouvelle tâche
+     * - Valide le statut via Project Service
+     * - Calcule la position automatiquement
      */
     @Transactional
     public TaskResponse createTask(TaskRequest request, Long userId, String role) {
-        // Vérifie que le projet existe + que l'utilisateur y a accès
+        log.info("Creating task for project {} by user {}", request.getProjectId(), userId);
+
+        // Valider l'accès au projet
         verifyProjectAccess(request.getProjectId(), userId, role);
 
-        // Vérifie que l'utilisateur assigné existe
-        if (request.getAssignedTo() != null) {
-            verifyUserExists(request.getAssignedTo(), userId, role);
-        }
-
-        // NOUVEAU: Récupérer le statut ou utiliser le premier statut du projet par défaut
-        TaskStatusEntity status;
+        // Déterminer le statut
+        StatusDTO status;
         if (request.getStatusId() != null) {
-            status = taskStatusRepository.findByIdAndProjectId(request.getStatusId(), request.getProjectId())
-                    .orElseThrow(() -> new BadRequestException("Status not found or does not belong to this project"));
+            // Valider que le statut appartient au projet
+            status = validateStatus(request.getProjectId(), request.getStatusId(), userId, role);
         } else {
-            // Si aucun statut n'est fourni, utiliser le premier statut du projet (position 0)
-            List<TaskStatusEntity> statuses = taskStatusRepository.findByProjectIdOrderByPositionAsc(request.getProjectId());
-            if (statuses.isEmpty()) {
-                throw new BadRequestException("No statuses found for this project. Please create statuses first.");
-            }
-            status = statuses.get(0);
+            // Utiliser le premier statut du projet (par défaut "To Do")
+            status = getFirstProjectStatus(request.getProjectId(), userId, role);
         }
 
-        // Calculer la position dans la colonne
-        Integer maxPosition = taskRepository.findMaxPositionByStatus(status);
-        Integer position = (maxPosition != null) ? maxPosition + 1 : 0;
-
+        // Créer la tâche
         Task task = new Task();
         task.setTitle(request.getTitle());
         task.setDescription(request.getDescription());
-        task.setStatus(status);  // CHANGÉ: maintenant c'est une entité
+        task.setStatusId(status.getId());
         task.setPriority(request.getPriority() != null ? request.getPriority() : Priority.MEDIUM);
         task.setDueDate(request.getDueDate());
         task.setProjectId(request.getProjectId());
         task.setAssignedTo(request.getAssignedTo());
-        task.setPosition(position);  // NOUVEAU
+
+        // Calculer la position (à la fin de la colonne)
+        Integer maxPosition = taskRepository.findMaxPositionByStatusId(status.getId());
+        task.setPosition(maxPosition + 1);
 
         Task savedTask = taskRepository.save(task);
-        log.info("Task created successfully with ID: {} in status: {}", savedTask.getId(), status.getName());
+        log.info("Task created with ID: {}", savedTask.getId());
 
-        return mapToTaskResponse(savedTask, userId, role);
+        return mapToTaskResponse(savedTask, status);
     }
 
     /**
-     * Récupérer les tâches avec filtres dynamiques :
-     * - Par projet
-     * - Par statut (maintenant par statusId)
-     * - Par priorité
-     * - Par utilisateur assigné
-     * - Recherche texte
-     * - Pagination
+     * Récupérer toutes les tâches avec filtres
      */
     @Transactional(readOnly = true)
-    public Page<TaskResponse> getAllTasks(Long projectId, Long statusId, Priority priority,
-                                          Long assignedTo, String search, Long userId, String role,
-                                          Pageable pageable) {
+    public Page<TaskResponse> getAllTasks(
+            Long projectId,
+            Long statusId,
+            Priority priority,
+            Long assignedTo,
+            String search,
+            Long userId,
+            String role,
+            Pageable pageable) {
+
         Page<Task> tasks;
 
         if (projectId != null) {
-            // Verify user has access to project
+            // Valider l'accès au projet
             verifyProjectAccess(projectId, userId, role);
 
+            // Appliquer les filtres
             if (search != null && !search.isEmpty()) {
                 tasks = taskRepository.searchTasksByProject(projectId, search, pageable);
             } else if (statusId != null) {
-                // CHANGÉ: Récupérer le statut par ID
-                TaskStatusEntity status = taskStatusRepository.findByIdAndProjectId(statusId, projectId)
-                        .orElseThrow(() -> new BadRequestException("Status not found"));
-                tasks = taskRepository.findByProjectIdAndStatus(projectId, status, pageable);
+                tasks = taskRepository.findByProjectIdAndStatusId(projectId, statusId, pageable);
+            } else if (priority != null) {
+                tasks = taskRepository.findByProjectIdAndPriority(projectId, priority, pageable);
             } else if (assignedTo != null) {
                 tasks = taskRepository.findByProjectIdAndAssignedTo(projectId, assignedTo, pageable);
             } else {
                 tasks = taskRepository.findByProjectId(projectId, pageable);
             }
+
+            // Enrichir avec les détails des statuts
+            return enrichTasksWithStatuses(tasks, projectId, userId, role);
+
         } else if (assignedTo != null) {
             tasks = taskRepository.findByAssignedTo(assignedTo, pageable);
         } else if (statusId != null) {
-            // CHANGÉ: Récupérer le statut par ID
-            TaskStatusEntity status = taskStatusRepository.findById(statusId)
-                    .orElseThrow(() -> new BadRequestException("Status not found"));
-            tasks = taskRepository.findByStatus(status, pageable);
+            tasks = taskRepository.findByStatusId(statusId, pageable);
         } else if (priority != null) {
             tasks = taskRepository.findByPriority(priority, pageable);
         } else {
-            // Admin can see all tasks
-            if ("ADMIN".equals(role)) {
-                tasks = taskRepository.findAll(pageable);
-            } else {
+            // Admin seulement
+            if (!"ADMIN".equals(role)) {
                 throw new BadRequestException("Must specify projectId or assignedTo");
             }
+            tasks = taskRepository.findAll(pageable);
         }
 
-        return tasks.map(task -> mapToTaskResponse(task, userId, role));
+        // Pour les requêtes non-project, enrichir individuellement
+        return tasks.map(task -> {
+            try {
+                StatusDTO status = projectServiceClient.getStatusById(
+                        task.getProjectId(),
+                        task.getStatusId(),
+                        userId,
+                        role
+                );
+                return mapToTaskResponse(task, status);
+            } catch (Exception e) {
+                log.error("Failed to fetch status for task {}", task.getId(), e);
+                return mapToTaskResponseWithoutStatus(task);
+            }
+        });
     }
 
     /**
-     * Récupérer une tâche par ID si l'utilisateur a accès au projet
+     * Récupérer une tâche par ID
      */
     @Transactional(readOnly = true)
     public TaskResponse getTaskById(Long taskId, Long userId, String role) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
 
+        // Valider l'accès au projet
         verifyProjectAccess(task.getProjectId(), userId, role);
 
-        return mapToTaskResponse(task, userId, role);
+        // Récupérer les détails du statut
+        StatusDTO status = fetchStatusDetails(task.getProjectId(), task.getStatusId(), userId, role);
+
+        return mapToTaskResponse(task, status);
     }
 
     /**
-     * Modifier une tâche (mise à jour partielle)
+     * Mettre à jour une tâche
      */
     @Transactional
     public TaskResponse updateTask(Long taskId, TaskRequest request, Long userId, String role) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
 
-        // Vérifie accès au projet
+        // Valider l'accès
         verifyProjectAccess(task.getProjectId(), userId, role);
 
-        // Vérifie l'utilisateur assigné
-        if (request.getAssignedTo() != null) {
-            verifyUserExists(request.getAssignedTo(), userId, role);
-        }
-
-        // Mise à jour champ par champ
+        // Mise à jour des champs
         if (request.getTitle() != null) {
             task.setTitle(request.getTitle());
         }
         if (request.getDescription() != null) {
             task.setDescription(request.getDescription());
-        }
-        if (request.getStatusId() != null) {
-            // CHANGÉ: Récupérer le statut par ID
-            TaskStatusEntity newStatus = taskStatusRepository.findByIdAndProjectId(
-                            request.getStatusId(), task.getProjectId())
-                    .orElseThrow(() -> new BadRequestException("Status not found or does not belong to this project"));
-
-            // Si le statut change, recalculer la position
-            if (!task.getStatus().getId().equals(newStatus.getId())) {
-                Integer maxPosition = taskRepository.findMaxPositionByStatus(newStatus);
-                task.setPosition((maxPosition != null) ? maxPosition + 1 : 0);
-            }
-
-            task.setStatus(newStatus);
         }
         if (request.getPriority() != null) {
             task.setPriority(request.getPriority());
@@ -193,162 +185,252 @@ public class TaskService {
             task.setAssignedTo(request.getAssignedTo());
         }
 
-        Task updatedTask = taskRepository.save(task);
-        log.info("Task {} updated successfully", taskId);
+        // Si le statut change, valider et recalculer la position
+        if (request.getStatusId() != null && !request.getStatusId().equals(task.getStatusId())) {
+            StatusDTO newStatus = validateStatus(task.getProjectId(), request.getStatusId(), userId, role);
+            task.setStatusId(newStatus.getId());
 
-        return mapToTaskResponse(updatedTask, userId, role);
-    }
-
-    /**
-     * Changer uniquement le statut d'une tâche
-     * Utilisé pour le Kanban (drag & drop)
-     */
-    @Transactional
-    public TaskResponse updateTaskStatus(Long taskId, UpdateStatusRequest request, Long userId, String role) {
-        Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
-
-        verifyProjectAccess(task.getProjectId(), userId, role);
-
-        // CHANGÉ: Récupérer le nouveau statut par ID
-        TaskStatusEntity newStatus = taskStatusRepository.findByIdAndProjectId(
-                        request.getStatusId(), task.getProjectId())
-                .orElseThrow(() -> new BadRequestException("Status not found or does not belong to this project"));
-
-        // Mettre à jour le statut et la position
-        task.setStatus(newStatus);
-
-        if (request.getPosition() != null) {
-            task.setPosition(request.getPosition());
-        } else {
-            // Si aucune position n'est fournie, mettre à la fin de la colonne
-            Integer maxPosition = taskRepository.findMaxPositionByStatus(newStatus);
-            task.setPosition((maxPosition != null) ? maxPosition + 1 : 0);
+            // Mettre à la fin de la nouvelle colonne
+            Integer maxPosition = taskRepository.findMaxPositionByStatusId(newStatus.getId());
+            task.setPosition(maxPosition + 1);
         }
 
         Task updatedTask = taskRepository.save(task);
+        log.info("Task {} updated", taskId);
 
-        log.info("Task {} status updated to {} (position: {})",
-                taskId, newStatus.getName(), task.getPosition());
+        // Récupérer les détails du statut pour la réponse
+        StatusDTO status = fetchStatusDetails(task.getProjectId(), task.getStatusId(), userId, role);
 
-        return mapToTaskResponse(updatedTask, userId, role);
+        return mapToTaskResponse(updatedTask, status);
+    }
+
+    /**
+     * Mettre à jour le statut d'une tâche (drag & drop)
+     */
+    @Transactional
+    public TaskResponse updateTaskStatus(Long taskId, UpdateTaskStatusRequest request, Long userId, String role) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+
+        // Valider l'accès
+        verifyProjectAccess(task.getProjectId(), userId, role);
+
+        // Valider le nouveau statut appartient au même projet
+        StatusDTO newStatus = validateStatus(task.getProjectId(), request.getStatusId(), userId, role);
+
+        // Mettre à jour le statut et la position
+        task.setStatusId(newStatus.getId());
+        task.setPosition(request.getPosition() != null ? request.getPosition() : 0);
+
+        Task updatedTask = taskRepository.save(task);
+        log.info("Task {} moved to status {}", taskId, newStatus.getName());
+
+        return mapToTaskResponse(updatedTask, newStatus);
     }
 
     /**
      * Supprimer une tâche
-     * Seulement le owner du projet ou ADMIN
      */
     @Transactional
     public void deleteTask(Long taskId, Long userId, String role) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
 
-        ProjectDTO project = verifyProjectAccess(task.getProjectId(), userId, role);
-
-        if (!project.getOwnerId().equals(userId) && !"ADMIN".equals(role)) {
-            throw new ForbiddenException("Only the project owner can delete tasks");
-        }
+        // Valider l'accès
+        verifyProjectAccess(task.getProjectId(), userId, role);
 
         taskRepository.delete(task);
-        log.info("Task {} deleted successfully", taskId);
+        log.info("Task {} deleted", taskId);
     }
 
     /**
-     * Statistiques Kanban par projet (dashboard)
-     * CHANGÉ: Maintenant dynamique basé sur les statuts du projet
+     * Obtenir les statistiques des tâches par projet
+     * Compatible avec l'ancien format pour le Project Service
      */
     @Transactional(readOnly = true)
-    public TaskStatsResponse getTaskStatsByProject(Long projectId, Long userId, String role) {
-        verifyProjectAccess(projectId, userId, role);
+    public TaskStatsResponse getTaskStatsByProject(Long projectId) {
+        log.info("Fetching task stats for project {}", projectId);
 
+        // Compter le total
         Long totalTasks = taskRepository.countByProjectId(projectId);
 
-        // Récupérer tous les statuts du projet
-        List<TaskStatusEntity> statuses = taskStatusRepository.findByProjectIdOrderByPositionAsc(projectId);
+        // Pour la compatibilité, on essaie de trouver les statuts par nom
+        // Sinon retourne 0 pour chaque catégorie
+        int todoTasks = 0;
+        int inProgressTasks = 0;
+        int doneTasks = 0;
 
-        // Compter les tâches pour chaque statut
-        TaskStatsResponse.TaskStatsResponseBuilder statsBuilder = TaskStatsResponse.builder()
-                .projectId(projectId)
-                .totalTasks(totalTasks.intValue());
+        try {
+            // Appel système pour récupérer les statuts
+            // On utilise un userId fictif pour les appels internes
+            List<StatusDTO> statuses = projectServiceClient.getProjectStatuses(projectId, 0L, "ADMIN");
 
-        // Pour compatibilité avec l'ancien système, on garde todoTasks, inProgressTasks, doneTasks
-        // mais on les récupère dynamiquement
-        for (TaskStatusEntity status : statuses) {
-            Long count = taskRepository.countByProjectIdAndStatus(projectId, status);
+            for (StatusDTO status : statuses) {
+                Long count = taskRepository.countByProjectIdAndStatusId(projectId, status.getId());
 
-            // Mapping pour compatibilité (basé sur les noms de statuts par défaut)
-            if (status.getName().equalsIgnoreCase("To Do") || status.getName().equalsIgnoreCase("TODO")) {
-                statsBuilder.todoTasks(count.intValue());
-            } else if (status.getName().equalsIgnoreCase("In Progress") || status.getName().equalsIgnoreCase("IN_PROGRESS")) {
-                statsBuilder.inProgressTasks(count.intValue());
-            } else if (status.getName().equalsIgnoreCase("Done") || status.getName().equalsIgnoreCase("DONE")) {
-                statsBuilder.doneTasks(count.intValue());
+                // Mapper par nom pour compatibilité avec l'ancien système
+                if ("To Do".equalsIgnoreCase(status.getName()) || "TODO".equalsIgnoreCase(status.getName())) {
+                    todoTasks = count.intValue();
+                } else if ("In Progress".equalsIgnoreCase(status.getName()) || "IN_PROGRESS".equalsIgnoreCase(status.getName())) {
+                    inProgressTasks = count.intValue();
+                } else if ("Done".equalsIgnoreCase(status.getName())) {
+                    doneTasks = count.intValue();
+                }
             }
+        } catch (Exception e) {
+            log.error("Failed to fetch statuses for stats, returning totals only", e);
         }
 
-        return statsBuilder.build();
+        return TaskStatsResponse.builder()
+                .projectId(projectId)
+                .totalTasks(totalTasks.intValue())
+                .todoTasks(todoTasks)
+                .inProgressTasks(inProgressTasks)
+                .doneTasks(doneTasks)
+                .build();
+    }
+
+    // ========== MÉTHODES PRIVÉES ==========
+
+    /**
+     * Valider qu'un statut existe et appartient au projet
+     */
+    private StatusDTO validateStatus(Long projectId, Long statusId, Long userId, String role) {
+        try {
+            StatusDTO status = projectServiceClient.getStatusById(projectId, statusId, userId, role);
+
+            if (status == null || !status.getProjectId().equals(projectId)) {
+                throw new BadRequestException("Invalid status for this project");
+            }
+
+            return status;
+        } catch (FeignException.NotFound e) {
+            throw new ResourceNotFoundException("Status not found");
+        } catch (FeignException.Forbidden e) {
+            throw new BadRequestException("No access to this status");
+        } catch (Exception e) {
+            log.error("Failed to validate status {} for project {}", statusId, projectId, e);
+            throw new BadRequestException("Invalid status or project");
+        }
     }
 
     /**
-     * Vérifier accès au projet
+     * Obtenir le premier statut d'un projet (par défaut)
      */
-    private ProjectDTO verifyProjectAccess(Long projectId, Long userId, String role) {
+    private StatusDTO getFirstProjectStatus(Long projectId, Long userId, String role) {
         try {
-            return projectServiceClient.getProjectById(projectId, userId, role);
+            List<StatusDTO> statuses = projectServiceClient.getProjectStatuses(projectId, userId, role);
+
+            if (statuses.isEmpty()) {
+                throw new BadRequestException("No statuses found for this project");
+            }
+
+            // Retourner le premier statut (normalement "To Do")
+            return statuses.get(0);
+        } catch (Exception e) {
+            log.error("Failed to fetch statuses for project {}", projectId, e);
+            throw new BadRequestException("Failed to get project statuses");
+        }
+    }
+
+    /**
+     * Récupérer les détails d'un statut
+     */
+    private StatusDTO fetchStatusDetails(Long projectId, Long statusId, Long userId, String role) {
+        try {
+            return projectServiceClient.getStatusById(projectId, statusId, userId, role);
+        } catch (Exception e) {
+            log.error("Failed to fetch status details", e);
+            // Retourner un statut minimal si l'appel échoue
+            return StatusDTO.builder()
+                    .id(statusId)
+                    .name("Unknown")
+                    .color("#999999")
+                    .build();
+        }
+    }
+
+    /**
+     * Valider l'accès au projet
+     */
+    private void verifyProjectAccess(Long projectId, Long userId, String role) {
+        try {
+            projectServiceClient.getProjectById(projectId, userId, role);
+        } catch (FeignException.NotFound e) {
+            throw new ResourceNotFoundException("Project not found");
+        } catch (FeignException.Forbidden e) {
+            throw new BadRequestException("No access to this project");
         } catch (Exception e) {
             log.error("Failed to verify project access for projectId: {}", projectId, e);
-            throw new BadRequestException("Project not found or access denied");
-        }
-    }
-
-    private void verifyUserExists(Long userIdToVerify, Long requesterId, String role) {
-        try {
-            authServiceClient.getUserById(userIdToVerify, requesterId, role);
-        } catch (Exception e) {
-            log.error("Failed to verify user exists for userId: {}", userIdToVerify, e);
-            throw new BadRequestException("User not found");
+            throw new BadRequestException("Failed to verify project access");
         }
     }
 
     /**
-     * Mapper Task → TaskResponse
-     * CHANGÉ: Le statut est maintenant un objet avec id, name, color, etc.
+     * Enrichir les tâches avec les détails des statuts (batch)
      */
-    private TaskResponse mapToTaskResponse(Task task, Long userId, String role) {
-        AssignedUserDTO assignedUser = null;
+    private Page<TaskResponse> enrichTasksWithStatuses(Page<Task> tasks, Long projectId, Long userId, String role) {
+        try {
+            // Récupérer tous les statuts du projet en une seule fois
+            List<StatusDTO> statuses = projectServiceClient.getProjectStatuses(projectId, userId, role);
 
-        if (task.getAssignedTo() != null) {
-            try {
-                UserDTO user = authServiceClient.getUserById(task.getAssignedTo(), userId, role);
-                assignedUser = AssignedUserDTO.builder()
-                        .id(user.getId())
-                        .firstName(user.getFirstName())
-                        .lastName(user.getLastName())
-                        .email(user.getEmail())
-                        .avatarUrl(user.getAvatarUrl())
-                        .build();
-            } catch (Exception e) {
-                log.error("Failed to fetch assigned user details for userId: {}", task.getAssignedTo(), e);
-            }
+            // Créer un map pour lookup rapide
+            Map<Long, StatusDTO> statusMap = statuses.stream()
+                    .collect(Collectors.toMap(StatusDTO::getId, s -> s));
+
+            // Enrichir les tâches
+            return tasks.map(task -> {
+                StatusDTO status = statusMap.get(task.getStatusId());
+                if (status != null) {
+                    return mapToTaskResponse(task, status);
+                } else {
+                    return mapToTaskResponseWithoutStatus(task);
+                }
+            });
+        } catch (Exception e) {
+            log.error("Failed to enrich tasks with statuses", e);
+            // Fallback: retourner les tâches sans enrichissement
+            return tasks.map(this::mapToTaskResponseWithoutStatus);
         }
+    }
 
-        // CHANGÉ: Créer un StatusDTO pour la réponse
-        StatusDTO statusDTO = StatusDTO.builder()
-                .id(task.getStatus().getId())
-                .name(task.getStatus().getName())
-                .color(task.getStatus().getColor())
-                .build();
-
+    /**
+     * Mapper Task vers TaskResponse avec statut enrichi
+     */
+    private TaskResponse mapToTaskResponse(Task task, StatusDTO status) {
         return TaskResponse.builder()
                 .id(task.getId())
                 .title(task.getTitle())
                 .description(task.getDescription())
-                .status(statusDTO)  // CHANGÉ: maintenant c'est un objet StatusDTO
+                .status(status)
                 .priority(task.getPriority())
                 .dueDate(task.getDueDate())
                 .projectId(task.getProjectId())
-                .assignedUser(assignedUser)
-                .position(task.getPosition())  // NOUVEAU
+                .assignedUser(task.getAssignedTo())
+                .position(task.getPosition())
+                .createdAt(task.getCreatedAt())
+                .updatedAt(task.getUpdatedAt())
+                .build();
+    }
+
+    /**
+     * Mapper Task vers TaskResponse sans détails de statut (fallback)
+     */
+    private TaskResponse mapToTaskResponseWithoutStatus(Task task) {
+        return TaskResponse.builder()
+                .id(task.getId())
+                .title(task.getTitle())
+                .description(task.getDescription())
+                .status(StatusDTO.builder()
+                        .id(task.getStatusId())
+                        .name("Unknown")
+                        .color("#999999")
+                        .build())
+                .priority(task.getPriority())
+                .dueDate(task.getDueDate())
+                .projectId(task.getProjectId())
+                .assignedUser(task.getAssignedTo())
+                .position(task.getPosition())
                 .createdAt(task.getCreatedAt())
                 .updatedAt(task.getUpdatedAt())
                 .build();
