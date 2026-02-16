@@ -1,9 +1,6 @@
 package com.examlple.taskservice.controller;
 
-import com.examlple.taskservice.dto.TaskRequest;
-import com.examlple.taskservice.dto.TaskResponse;
-import com.examlple.taskservice.dto.TaskStatsResponse;
-import com.examlple.taskservice.dto.UpdateStatusRequest;
+import com.examlple.taskservice.dto.*;
 import com.examlple.taskservice.entity.Priority;
 import com.examlple.taskservice.entity.TaskStatus;
 import com.examlple.taskservice.service.TaskService;
@@ -65,31 +62,39 @@ public class TaskController {
         return ResponseEntity.ok(task);
     }
 
+    /**
+     * PATCH /api/v1/tasks/{id}/status
+     * Mettre à jour le statut d'une tâche (drag & drop)
+     */
     @PatchMapping("/{id}/status")
     public ResponseEntity<TaskResponse> updateTaskStatus(
             @PathVariable Long id,
-            @Valid @RequestBody UpdateStatusRequest request,
+            @Valid @RequestBody UpdateTaskStatusRequest request,
             @RequestHeader("X-User-Id") Long userId,
             @RequestHeader("X-User-Role") String role) {
+
         TaskResponse task = taskService.updateTaskStatus(id, request, userId, role);
         return ResponseEntity.ok(task);
     }
 
+    /**
+     * Supprimer une tâche
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTask(
             @PathVariable Long id,
             @RequestHeader("X-User-Id") Long userId,
             @RequestHeader("X-User-Role") String role) {
+
         taskService.deleteTask(id, userId, role);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/stats")
     public ResponseEntity<TaskStatsResponse> getTaskStats(
-            @RequestParam Long projectId,
-            @RequestHeader("X-User-Id") Long userId,
-            @RequestHeader("X-User-Role") String role) {
-        TaskStatsResponse stats = taskService.getTaskStatsByProject(projectId, userId, role);
+            @RequestParam Long projectId) {
+
+        TaskStatsResponse stats = taskService.getTaskStatsByProject(projectId);
         return ResponseEntity.ok(stats);
     }
 }
