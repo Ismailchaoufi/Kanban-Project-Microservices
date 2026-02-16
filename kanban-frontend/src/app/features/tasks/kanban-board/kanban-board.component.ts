@@ -9,12 +9,12 @@ import {MatSnackBar, MatSnackBarModule} from '@angular/material/snack-bar';
 import {MatMenuModule} from '@angular/material/menu';
 import {TaskCardComponent} from '../task-card/task-card.component';
 import {TaskService} from '../../../core/services/task.service';
-import {TaskStatusService} from '../../../core/services/task-status.service';
 import {MatDialog} from '@angular/material/dialog';
 import {TaskDetailComponent} from '../task-detail/task-detail.component';
 import {TaskFormComponent} from '../task-form/task-form.component';
-import {StatusFormDialogComponent} from '../status-form-dialog/status-form-dialog.component';
-import {ConfirmDialogComponent} from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import {TaskStatusService} from '../../../core/services/task-status-service.service';
+import {StatusFormDialogComponent} from '../dialogs/status-form-dialog/status-form-dialog.component';
+import {ConfirmDialogComponent} from '../dialogs/confirm-dialog/confirm-dialog.component';
 
 interface KanbanColumn {
   status: TaskStatus;  // Changed: now it's the full status object
@@ -56,8 +56,8 @@ export class KanbanBoardComponent implements OnInit {
   }
 
   /**
-   * Load all statuses for the project
-   * If no statuses exist, they will be created automatically by backend
+   * Load all statuses for the project from Project Service
+   * Creates columns dynamically
    */
   loadStatuses(): void {
     this.loading = true;
@@ -69,7 +69,7 @@ export class KanbanBoardComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading statuses:', error);
-        this.snackBar.open('Error loading board statuses', 'Close', { duration: 3000 });
+        this.snackBar.open('Erreur lors du chargement des colonnes', 'Fermer', { duration: 3000 });
         this.loading = false;
       }
     });
@@ -86,7 +86,7 @@ export class KanbanBoardComponent implements OnInit {
   }
 
   /**
-   * Load all tasks for the project
+   * Load all tasks for the project from Task Service
    */
   loadTasks(): void {
     this.taskService.getAllTasks(this.projectId).subscribe({
@@ -96,7 +96,7 @@ export class KanbanBoardComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading tasks:', error);
-        this.snackBar.open('Error loading tasks', 'Close', { duration: 3000 });
+        this.snackBar.open('Erreur lors du chargement des tâches', 'Fermer', { duration: 3000 });
         this.loading = false;
       }
     });
@@ -104,6 +104,7 @@ export class KanbanBoardComponent implements OnInit {
 
   /**
    * Distribute tasks into their respective columns
+   * UPDATED: Uses status.id for matching
    */
   distributeTasks(tasks: Task[]): void {
     // Clear all columns
@@ -125,6 +126,7 @@ export class KanbanBoardComponent implements OnInit {
 
   /**
    * Handle drag and drop events
+   * UPDATED: Sends statusId instead of enum
    */
   drop(event: CdkDragDrop<Task[]>, targetColumn: KanbanColumn): void {
     if (event.previousContainer === event.container) {
@@ -157,12 +159,12 @@ export class KanbanBoardComponent implements OnInit {
       // Update positions in target column
       this.updateTaskPositions(targetColumnData);
 
-      // Update on backend
+      // Update on backend - SEND statusId
       this.taskService.updateTaskStatus(
         task.id,
-        targetColumn.status.id,  // Send status ID
+        targetColumn.status.id,  // ← CHANGED: Send status ID
         this.projectId,
-        event.currentIndex  // Send position
+        event.currentIndex
       ).subscribe({
         next: (updatedTask) => {
           // Merge the updated task data from server
@@ -170,7 +172,7 @@ export class KanbanBoardComponent implements OnInit {
             Object.assign(task, updatedTask);
           }
 
-          this.snackBar.open(`Task moved to ${targetColumn.status.name}`, 'Close', {
+          this.snackBar.open(`Tâche déplacée vers ${targetColumn.status.name}`, 'Fermer', {
             duration: 2000,
             horizontalPosition: 'end',
             verticalPosition: 'bottom'
@@ -193,7 +195,7 @@ export class KanbanBoardComponent implements OnInit {
             );
           }
 
-          this.snackBar.open('Failed to move task', 'Close', {
+          this.snackBar.open('Échec du déplacement de la tâche', 'Fermer', {
             duration: 3000,
             panelClass: 'snackbar-error'
           });
@@ -220,19 +222,20 @@ export class KanbanBoardComponent implements OnInit {
 
   /**
    * Open dialog to create a new task in a specific column
+   * UPDATED: Passes statusId instead of enum
    */
   createTask(column: KanbanColumn): void {
     const dialogRef = this.dialog.open(TaskFormComponent, {
       width: '600px',
       data: {
         projectId: this.projectId,
-        defaultStatusId: column.status.id  // Pass the status ID
+        defaultStatusId: column.status.id  // ← CHANGED: Pass status ID
       }
     });
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        this.loadTasks(); // Reload tasks after creation
+        this.loadTasks();
       }
     });
   }
@@ -248,14 +251,13 @@ export class KanbanBoardComponent implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      // Reload tasks if deleted or updated
       if (result?.deleted || result?.updated) {
         this.loadTasks();
       }
     });
   }
 
-  // ===== STATUS MANAGEMENT METHODS =====
+  // ========== STATUS MANAGEMENT ==========
 
   /**
    * Open dialog to create a new status column
@@ -268,8 +270,8 @@ export class KanbanBoardComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        this.loadStatuses(); // Reload statuses and tasks
-        this.snackBar.open('Status column created!', 'Close', { duration: 2000 });
+        this.loadStatuses();
+        this.snackBar.open('Colonne créée !', 'Fermer', { duration: 2000 });
       }
     });
   }
@@ -288,7 +290,7 @@ export class KanbanBoardComponent implements OnInit {
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
         this.loadStatuses();
-        this.snackBar.open('Status updated!', 'Close', { duration: 2000 });
+        this.snackBar.open('Statut mis à jour !', 'Fermer', { duration: 2000 });
       }
     });
   }
@@ -300,7 +302,7 @@ export class KanbanBoardComponent implements OnInit {
     event.stopPropagation();
 
     if (this.columns.length <= 1) {
-      this.snackBar.open('Cannot delete the last status', 'Close', { duration: 3000 });
+      this.snackBar.open('Impossible de supprimer le dernier statut', 'Fermer', { duration: 3000 });
       return;
     }
 
@@ -310,11 +312,11 @@ export class KanbanBoardComponent implements OnInit {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       width: '500px',
       data: {
-        title: 'Delete Status Column',
-        message: `Are you sure you want to delete "${column.status.name}"? ` +
-          `All ${column.tasks.length} task(s) will be moved to another status.`,
-        confirmText: 'Delete',
-        cancelText: 'Cancel',
+        title: 'Supprimer la colonne',
+        message: `Voulez-vous vraiment supprimer "${column.status.name}" ? ` +
+          `Les ${column.tasks.length} tâche(s) seront déplacées vers un autre statut.`,
+        confirmText: 'Supprimer',
+        cancelText: 'Annuler',
         showMoveToSelect: true,
         moveToOptions: otherStatuses
       }
@@ -323,19 +325,19 @@ export class KanbanBoardComponent implements OnInit {
     dialogRef.afterClosed().subscribe(result => {
       if (result?.confirmed && result?.moveToStatusId) {
         this.taskStatusService.deleteStatus(
+          this.projectId,
           column.status.id,
-          result.moveToStatusId,
-          this.projectId
+          result.moveToStatusId
         ).subscribe({
           next: () => {
-            this.snackBar.open('Status deleted successfully', 'Close', { duration: 2000 });
+            this.snackBar.open('Statut supprimé avec succès', 'Fermer', { duration: 2000 });
             this.loadStatuses();
           },
           error: (error) => {
             console.error('Error deleting status:', error);
             this.snackBar.open(
-              error.error?.message || 'Failed to delete status',
-              'Close',
+              error.error?.message || 'Échec de la suppression du statut',
+              'Fermer',
               { duration: 3000 }
             );
           }

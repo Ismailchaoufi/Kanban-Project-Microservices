@@ -1,0 +1,26 @@
+mat-dialog-content {
+  min-width: 400px;
+  padding: 20px;
+}
+
+mat-dialog-content p {
+  margin: 0 0 20px 0;
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.full-width {
+  width: 100%;
+}
+
+.status-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: inline-block;
+}

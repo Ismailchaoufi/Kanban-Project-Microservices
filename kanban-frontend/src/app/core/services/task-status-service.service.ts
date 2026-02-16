@@ -22,6 +22,13 @@ export class TaskStatusService {
   }
 
   /**
+   * Get a single status by ID
+   */
+  getStatusById(projectId: number, statusId: number): Observable<TaskStatus> {
+    return this.http.get<TaskStatus>(`${this.apiUrl}/${projectId}/statuses/${statusId}`);
+  }
+
+  /**
    * Create a new custom status
    */
   createStatus(projectId: number, request: TaskStatusRequest): Observable<TaskStatus> {

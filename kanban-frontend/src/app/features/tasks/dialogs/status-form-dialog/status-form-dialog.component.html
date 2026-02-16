@@ -1,0 +1,58 @@
+<h2 mat-dialog-title>{{ isEditing ? 'Modifier le statut' : 'Nouveau statut' }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Nom du statut</mat-label>
+      <input matInput formControlName="name" placeholder="Ex: En révision" autocomplete="off">
+      <mat-error *ngIf="form.get('name')?.hasError('required')">
+        Le nom est requis
+      </mat-error>
+    </mat-form-field>
+
+    <div class="color-picker-container">
+      <label>Couleur</label>
+      <div class="color-options">
+        <div
+          *ngFor="let color of colorOptions"
+          class="color-option"
+          [style.background-color]="color"
+          [class.selected]="form.get('color')?.value === color"
+          (click)="selectColor(color)">
+          <mat-icon *ngIf="form.get('color')?.value === color">check</mat-icon>
+        </div>
+      </div>
+
+      <!-- Custom color input -->
+      <div class="custom-color">
+        <mat-form-field appearance="outline">
+          <mat-label>Couleur personnalisée</mat-label>
+          <input
+            matInput
+            formControlName="color"
+            placeholder="#ff9800"
+            pattern="^#[0-9A-Fa-f]{6}$">
+          <mat-error *ngIf="form.get('color')?.hasError('pattern')">
+            Format invalide (ex: #ff9800)
+          </mat-error>
+        </mat-form-field>
+        <input
+          type="color"
+          [value]="form.get('color')?.value || '#ff9800'"
+          (input)="onColorInput($event)"
+          class="color-input">
+      </div>
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Annuler</button>
+  <button
+    mat-raised-button
+    color="primary"
+    (click)="onSubmit()"
+    [disabled]="!form.valid || loading">
+    {{ isEditing ? 'Mettre à jour' : 'Créer' }}
+  </button>
+</mat-dialog-actions>

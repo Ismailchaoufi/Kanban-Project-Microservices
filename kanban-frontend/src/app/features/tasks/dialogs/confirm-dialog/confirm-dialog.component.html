@@ -1,0 +1,31 @@
+<h2 mat-dialog-title>{{ data.title }}</h2>
+
+<mat-dialog-content>
+  <p>{{ data.message }}</p>
+
+  <!-- Select destination status if moving tasks -->
+  <mat-form-field appearance="outline" *ngIf="data.showMoveToSelect && data.moveToOptions" class="full-width">
+    <mat-label>Déplacer les tâches vers</mat-label>
+    <mat-select [(ngModel)]="selectedMoveToId" required>
+      <mat-option *ngFor="let status of data.moveToOptions" [value]="status.id">
+            <span class="status-option">
+              <span class="status-color" [style.background-color]="status.color"></span>
+              {{ status.name }}
+            </span>
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">
+    {{ data.cancelText || 'Annuler' }}
+  </button>
+  <button
+    mat-raised-button
+    color="warn"
+    (click)="onConfirm()"
+    [disabled]="data.showMoveToSelect && !selectedMoveToId">
+    {{ data.confirmText || 'Confirmer' }}
+  </button>
+</mat-dialog-actions>
