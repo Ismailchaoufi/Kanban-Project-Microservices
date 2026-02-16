@@ -27,19 +27,17 @@ public class Task {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    // Changed from enum to entity reference
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "status_id", nullable = false)
-    private TaskStatusEntity status;
+    @Column(name = "status_id", nullable = false)
+    private Long statusId;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 20)
     private Priority priority = Priority.MEDIUM;
 
     @Column
     private LocalDate dueDate;
 
-    @Column(nullable = false)
+    @Column(name = "project_id", nullable = false)
     private Long projectId;
 
     @Column
