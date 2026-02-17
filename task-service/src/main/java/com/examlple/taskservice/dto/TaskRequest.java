@@ -1,7 +1,6 @@
 package com.examlple.taskservice.dto;
 
 import com.examlple.taskservice.entity.Priority;
-import com.examlple.taskservice.entity.TaskStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;

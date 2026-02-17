@@ -2,7 +2,6 @@ package com.examlple.taskservice.controller;
 
 import com.examlple.taskservice.dto.*;
 import com.examlple.taskservice.entity.Priority;
-import com.examlple.taskservice.entity.TaskStatus;
 import com.examlple.taskservice.service.TaskService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

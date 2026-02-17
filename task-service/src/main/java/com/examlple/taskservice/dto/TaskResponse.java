@@ -1,7 +1,6 @@
 package com.examlple.taskservice.dto;
 
 import com.examlple.taskservice.entity.Priority;
-import com.examlple.taskservice.entity.TaskStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

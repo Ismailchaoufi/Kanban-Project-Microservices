@@ -1,16 +1,12 @@
 package com.examlple.taskservice.service;
 
-import com.examlple.taskservice.client.AuthServiceClient;
 import com.examlple.taskservice.client.ProjectServiceClient;
 import com.examlple.taskservice.dto.*;
 import com.examlple.taskservice.entity.Priority;
 import com.examlple.taskservice.entity.Task;
-import com.examlple.taskservice.entity.TaskStatusEntity;
 import com.examlple.taskservice.exception.BadRequestException;
-import com.examlple.taskservice.exception.ForbiddenException;
 import com.examlple.taskservice.exception.ResourceNotFoundException;
 import com.examlple.taskservice.repository.TaskRepository;
-import com.examlple.taskservice.repository.TaskStatusRepository;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
