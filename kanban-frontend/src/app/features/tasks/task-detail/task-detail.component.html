@@ -10,7 +10,7 @@
     <!-- Status and Priority Chips -->
     <div class="chips-container">
       <mat-chip [style.background-color]="getStatusColor()" class="status-chip">
-        {{ data.task.status.replace('_', ' ') }}
+        {{ data.task.status.name }}
       </mat-chip>
       <mat-chip [style.background-color]="getPriorityColor()" class="priority-chip">
         {{ data.task.priority }}

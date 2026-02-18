@@ -1,18 +1,20 @@
-import { Component, OnInit, Inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { MatSelectModule } from '@angular/material/select';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+
 import { TaskService } from '../../../core/services/task.service';
 import { ProjectService } from '../../../core/services/project.service';
-import { Task, TaskStatus, Priority, TaskRequest } from '../../../core/models/task.model';
 import { Member } from '../../../core/models/project.model';
+import {Priority, Task, TaskRequest, TaskStatus} from '../../../core/models/task.model';
+import {TaskStatusService} from '../../../core/services/task-status-service.service';
+import {Component, Inject, OnInit} from '@angular/core';
+import {CommonModule} from '@angular/common';
+import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
+import {MAT_DIALOG_DATA, MatDialogModule, MatDialogRef} from '@angular/material/dialog';
+import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatInputModule} from '@angular/material/input';
+import {MatButtonModule} from '@angular/material/button';
+import {MatSelectModule} from '@angular/material/select';
+import {MatDatepickerModule} from '@angular/material/datepicker';
+import {MatSnackBar, MatSnackBarModule} from '@angular/material/snack-bar';
+import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 
 @Component({
   selector: 'app-task-form',
@@ -38,11 +40,7 @@ export class TaskFormComponent implements OnInit {
   isEditMode = false;
   members: Member[] = [];
 
-  statusOptions = [
-    { value: TaskStatus.TODO, label: 'To Do' },
-    { value: TaskStatus.IN_PROGRESS, label: 'In Progress' },
-    { value: TaskStatus.DONE, label: 'Done' }
-  ];
+  statusOptions: TaskStatus[] = [];
 
   priorityOptions = [
     { value: Priority.LOW, label: 'Low' },
@@ -54,22 +52,40 @@ export class TaskFormComponent implements OnInit {
     private fb: FormBuilder,
     private taskService: TaskService,
     private projectService: ProjectService,
+    private taskStatusService: TaskStatusService,
     private snackBar: MatSnackBar,
     public dialogRef: MatDialogRef<TaskFormComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { task?: Task; projectId: number }
+    @Inject(MAT_DIALOG_DATA) public data: { task?: Task; projectId: number; defaultStatusId?: number }
   ) {}
 
   ngOnInit(): void {
     this.isEditMode = !!this.data?.task;
-    this.initForm();
+    this.loadStatuses();
     this.loadProjectMembers();
   }
 
+  loadStatuses(): void {
+    this.taskStatusService.getProjectStatuses(this.data.projectId).subscribe({
+      next: (statuses) => {
+        this.statusOptions = statuses;
+        this.initForm();
+      },
+      error: (error) => {
+        console.error('Error loading statuses:', error);
+        this.initForm();
+      }
+    });
+  }
+
   initForm(): void {
+    const defaultStatusId = this.data?.defaultStatusId
+      || this.data?.task?.status?.id
+      || (this.statusOptions.length > 0 ? this.statusOptions[0].id : null);
+
     this.taskForm = this.fb.group({
       title: [this.data?.task?.title || '', [Validators.required, Validators.minLength(3)]],
       description: [this.data?.task?.description || ''],
-      status: [this.data?.task?.status || TaskStatus.TODO],
+      statusId: [defaultStatusId],
       priority: [this.data?.task?.priority || Priority.MEDIUM],
       dueDate: [this.data?.task?.dueDate || null],
       assignedTo: [this.data?.task?.assignedUser?.id || null]

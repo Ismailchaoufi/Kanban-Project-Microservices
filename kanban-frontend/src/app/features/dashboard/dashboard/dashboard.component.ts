@@ -16,7 +16,6 @@ import {Task} from '../../../core/models/task.model';
 import {ProjectFormComponent} from '../../projects/project-form/project-form.component';
 import {MatDialog} from '@angular/material/dialog';
 
-// ✅ IMPORTANT: Import ALL necessary Chart.js components
 import {
   Chart,
   ArcElement,
@@ -27,7 +26,7 @@ import {
   LinearScale
 } from 'chart.js';
 
-// ✅ Register ALL Chart.js components
+// Register ALL Chart.js components
 Chart.register(
   ArcElement,
   Tooltip,
@@ -160,9 +159,9 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
         // Update all task counts
         this.totalTasks = allTasks.length;
-        this.todoTasks = allTasks.filter(t => t.status === 'TODO').length;
-        this.inProgressTasks = allTasks.filter(t => t.status === 'IN_PROGRESS').length;
-        this.doneTasks = allTasks.filter(t => t.status === 'DONE').length;
+        this.todoTasks = allTasks.filter(t => t.status.name.toLowerCase().includes('to do')).length;
+        this.inProgressTasks = allTasks.filter(t => t.status.name.toLowerCase().includes('in progress')).length;
+        this.doneTasks = allTasks.filter(t => t.status.name.toLowerCase().includes('done')).length;
         this.myTasks = allTasks.slice(0, 5);
 
         console.log('Tasks loaded:', {

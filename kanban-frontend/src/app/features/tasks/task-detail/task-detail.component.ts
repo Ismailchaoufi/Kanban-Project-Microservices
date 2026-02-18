@@ -49,21 +49,12 @@ export class TaskDetailComponent {
   }
 
   getStatusColor(): string {
-    switch (this.data.task.status) {
-      case 'TODO':
-        return '#ff9800';
-      case 'IN_PROGRESS':
-        return '#2196f3';
-      case 'DONE':
-        return '#4caf50';
-      default:
-        return '#9e9e9e';
-    }
+    return this.data.task.status.color;
   }
 
   isOverdue(): boolean {
     if (!this.data.task.dueDate) return false;
-    return new Date(this.data.task.dueDate) < new Date() && this.data.task.status !== 'DONE';
+    return new Date(this.data.task.dueDate) < new Date() && this.data.task.status.name.toLowerCase().includes('done');
   }
 
   onEdit(): void {

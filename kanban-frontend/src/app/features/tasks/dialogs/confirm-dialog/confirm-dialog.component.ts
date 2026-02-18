@@ -1,6 +1,18 @@
 import {Component, Inject} from '@angular/core';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {
+  MAT_DIALOG_DATA,
+  MatDialogActions,
+  MatDialogContent,
+  MatDialogRef,
+  MatDialogTitle
+} from '@angular/material/dialog';
 import {TaskStatus} from '../../../../core/models/task.model';
+import {MatOption} from '@angular/material/core';
+import {MatFormField} from '@angular/material/input';
+import {MatSelect} from '@angular/material/select';
+import {FormsModule} from '@angular/forms';
+import {MatButton} from '@angular/material/button';
+import {NgForOf, NgIf} from '@angular/common';
 
 export interface ConfirmDialogData {
   title: string;
@@ -13,7 +25,18 @@ export interface ConfirmDialogData {
 
 @Component({
   selector: 'app-confirm-dialog',
-  imports: [],
+  imports: [
+    MatOption,
+    MatFormField,
+    MatDialogActions,
+    MatDialogContent,
+    MatSelect,
+    FormsModule,
+    MatButton,
+    MatDialogTitle,
+    NgForOf,
+    NgIf
+  ],
   templateUrl: './confirm-dialog.component.html',
   standalone: true,
   styleUrl: './confirm-dialog.component.css'

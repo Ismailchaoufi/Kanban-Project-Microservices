@@ -142,7 +142,7 @@
         <ng-container *ngIf="myTasks && myTasks.length > 0; else noMyTasks">
           <div class="tasks-list">
             <div *ngFor="let task of myTasks; trackBy: trackByTaskId" class="task-item">
-              <div class="task-status-indicator" [class]="'status-' + task.status.toLowerCase()"></div>
+              <div class="task-status-indicator" [class]="'status-' + task.status.color"></div>
               <div class="task-info">
                 <h4 class="task-title">{{ task.title }}</h4>
                 <p class="task-desc">{{ task.description || 'No description' }}</p>
@@ -151,8 +151,8 @@
                 <mat-chip [class]="'priority-chip priority-' + task.priority.toLowerCase()">
                   {{ task.priority }}
                 </mat-chip>
-                <mat-chip [class]="'status-chip status-' + task.status.toLowerCase()">
-                  {{ task.status.replace('_', ' ') }}
+                <mat-chip [class]="'status-chip status-' + task.status.color">
+                  {{ task.status.name }}
                 </mat-chip>
               </div>
             </div>

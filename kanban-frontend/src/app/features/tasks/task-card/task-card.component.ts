@@ -35,6 +35,6 @@ export class TaskCardComponent {
 
   isOverdue(): boolean {
     if (!this.task.dueDate) return false;
-    return new Date(this.task.dueDate) < new Date() && this.task.status !== 'DONE';
+    return new Date(this.task.dueDate) < new Date() && this.task.status.name.toLowerCase().includes('done');
   }
 }

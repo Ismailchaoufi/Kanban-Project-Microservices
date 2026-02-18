@@ -1,9 +1,19 @@
 import {Component, Inject} from '@angular/core';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
 import {TaskStatusService} from '../../../../core/services/task-status-service.service';
 import {MatSnackBar} from '@angular/material/snack-bar';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {
+  MAT_DIALOG_DATA,
+  MatDialogActions,
+  MatDialogContent,
+  MatDialogRef,
+  MatDialogTitle
+} from '@angular/material/dialog';
 import {TaskStatus, TaskStatusRequest} from '../../../../core/models/task.model';
+import {MatError, MatFormField, MatInput} from '@angular/material/input';
+import {MatIcon} from '@angular/material/icon';
+import {MatButton} from '@angular/material/button';
+import {NgForOf, NgIf} from '@angular/common';
 
 export interface StatusFormDialogData {
   projectId: number;
@@ -12,7 +22,20 @@ export interface StatusFormDialogData {
 
 @Component({
   selector: 'app-status-form-dialog',
-  imports: [],
+  imports: [
+    ReactiveFormsModule,
+    MatError,
+    MatFormField,
+    MatDialogContent,
+    MatDialogActions,
+    MatIcon,
+    MatInput,
+    MatDialogTitle,
+    MatButton,
+    FormsModule,
+    NgIf,
+    NgForOf
+  ],
   templateUrl: './status-form-dialog.component.html',
   standalone: true,
   styleUrl: './status-form-dialog.component.css'
