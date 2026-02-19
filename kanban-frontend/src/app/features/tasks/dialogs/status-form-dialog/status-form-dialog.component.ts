@@ -10,7 +10,7 @@ import {
   MatDialogTitle
 } from '@angular/material/dialog';
 import {TaskStatus, TaskStatusRequest} from '../../../../core/models/task.model';
-import {MatError, MatFormField, MatInput} from '@angular/material/input';
+import {MatError, MatFormField, MatInput, MatLabel} from '@angular/material/input';
 import {MatIcon} from '@angular/material/icon';
 import {MatButton} from '@angular/material/button';
 import {NgForOf, NgIf} from '@angular/common';
@@ -30,6 +30,7 @@ export interface StatusFormDialogData {
     MatDialogActions,
     MatIcon,
     MatInput,
+    MatLabel,
     MatDialogTitle,
     MatButton,
     FormsModule,

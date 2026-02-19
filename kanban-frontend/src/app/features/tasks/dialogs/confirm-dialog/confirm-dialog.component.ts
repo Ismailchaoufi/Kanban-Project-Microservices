@@ -8,7 +8,7 @@ import {
 } from '@angular/material/dialog';
 import {TaskStatus} from '../../../../core/models/task.model';
 import {MatOption} from '@angular/material/core';
-import {MatFormField} from '@angular/material/input';
+import {MatFormField, MatLabel} from '@angular/material/input';
 import {MatSelect} from '@angular/material/select';
 import {FormsModule} from '@angular/forms';
 import {MatButton} from '@angular/material/button';
@@ -33,6 +33,7 @@ export interface ConfirmDialogData {
     MatSelect,
     FormsModule,
     MatButton,
+    MatLabel,
     MatDialogTitle,
     NgForOf,
     NgIf
