@@ -308,6 +308,17 @@ export class KanbanBoardComponent implements OnInit {
 
     // Find other statuses to move tasks to
     const otherStatuses = this.allStatuses.filter(s => s.id !== column.status.id);
+    const fallbackStatusId = otherStatuses[0]?.id;
+
+    if (!fallbackStatusId) {
+      this.snackBar.open('Aucun statut de destination disponible', 'Fermer', { duration: 3000 });
+      return;
+    }
+
+    if (column.tasks.length === 0) {
+      this.performStatusDeletion(column.status.id, fallbackStatusId);
+      return;
+    }
 
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       width: '500px',
@@ -324,24 +335,28 @@ export class KanbanBoardComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result?.confirmed && result?.moveToStatusId) {
-        this.taskStatusService.deleteStatus(
-          this.projectId,
-          column.status.id,
-          result.moveToStatusId
-        ).subscribe({
-          next: () => {
-            this.snackBar.open('Statut supprimé avec succès', 'Fermer', { duration: 2000 });
-            this.loadStatuses();
-          },
-          error: (error) => {
-            console.error('Error deleting status:', error);
-            this.snackBar.open(
-              error.error?.message || 'Échec de la suppression du statut',
-              'Fermer',
-              { duration: 3000 }
-            );
-          }
-        });
+        this.performStatusDeletion(column.status.id, result.moveToStatusId);
+      }
+    });
+  }
+
+  private performStatusDeletion(statusId: number, moveToStatusId: number): void {
+    this.taskStatusService.deleteStatus(
+      this.projectId,
+      statusId,
+      moveToStatusId
+    ).subscribe({
+      next: () => {
+        this.snackBar.open('Statut supprimé avec succès', 'Fermer', { duration: 2000 });
+        this.loadStatuses();
+      },
+      error: (error) => {
+        console.error('Error deleting status:', error);
+        this.snackBar.open(
+          error.error?.message || 'Échec de la suppression du statut',
+          'Fermer',
+          { duration: 3000 }
+        );
       }
     });
   }

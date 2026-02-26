@@ -56,9 +56,9 @@ export class TaskStatusService {
    * Delete a status and move tasks to another status
    */
   deleteStatus(
+    projectId: number,
     statusId: number,
-    moveToStatusId: number,
-    projectId: number
+    moveToStatusId: number
   ): Observable<void> {
     return this.http.delete<void>(
       `${this.apiUrl}/${projectId}/statuses/${statusId}`,

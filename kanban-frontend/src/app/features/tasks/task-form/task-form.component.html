@@ -1,7 +1,7 @@
 <h2 mat-dialog-title>{{ isEditMode ? 'Edit Task' : 'Create New Task' }}</h2>
 
 <mat-dialog-content>
-  <form [formGroup]="taskForm" class="task-form">
+  <form [formGroup]="taskForm" class="task-form" *ngIf="taskForm">
     <!-- Title -->
     <mat-form-field appearance="outline" class="full-width">
       <mat-label>Task Title</mat-label>
@@ -29,8 +29,8 @@
     <div class="form-row">
       <mat-form-field appearance="outline" class="half-width">
         <mat-label>Status</mat-label>
-        <mat-select formControlName="status">
-          <mat-option *ngFor="let status of statusOptions" [value]="status.name">
+        <mat-select formControlName="statusId">
+          <mat-option *ngFor="let status of statusOptions" [value]="status.id">
             {{ status.name }}
           </mat-option>
         </mat-select>
@@ -76,7 +76,7 @@
     mat-raised-button
     color="primary"
     (click)="onSubmit()"
-    [disabled]="loading || taskForm.invalid">
+    [disabled]="loading || !taskForm || taskForm.invalid">
     <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
     <span *ngIf="!loading">{{ isEditMode ? 'Update' : 'Create' }}</span>
   </button>

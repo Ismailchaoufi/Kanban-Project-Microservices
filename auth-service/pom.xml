@@ -8,7 +8,7 @@
         <version>3.2.0</version>  <!-- ✅ Changé de 4.0.0 à 3.2.0 -->
         <relativePath/>
     </parent>
-    <groupId>com.examlple</groupId>
+    <groupId>com.example</groupId>
     <artifactId>auth-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>auth-service</name>

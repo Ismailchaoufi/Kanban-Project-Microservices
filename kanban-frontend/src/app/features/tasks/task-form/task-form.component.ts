@@ -60,6 +60,7 @@ export class TaskFormComponent implements OnInit {
 
   ngOnInit(): void {
     this.isEditMode = !!this.data?.task;
+    this.initForm();
     this.loadStatuses();
     this.loadProjectMembers();
   }
@@ -68,11 +69,13 @@ export class TaskFormComponent implements OnInit {
     this.taskStatusService.getProjectStatuses(this.data.projectId).subscribe({
       next: (statuses) => {
         this.statusOptions = statuses;
-        this.initForm();
+        const currentStatusId = this.taskForm.get('statusId')?.value;
+        if (!currentStatusId && statuses.length > 0) {
+          this.taskForm.patchValue({ statusId: statuses[0].id });
+        }
       },
       error: (error) => {
         console.error('Error loading statuses:', error);
-        this.initForm();
       }
     });
   }
@@ -104,7 +107,10 @@ export class TaskFormComponent implements OnInit {
   }
 
   onSubmit(): void {
+    const trimmedTitle = (this.taskForm.get('title')?.value || '').trim();
+    this.taskForm.patchValue({ title: trimmedTitle });
     if (this.taskForm.invalid) {
+      this.taskForm.markAllAsTouched();
       return;
     }
 

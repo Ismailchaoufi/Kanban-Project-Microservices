@@ -1,0 +1,68 @@
+spring:
+  cloud:
+    gateway:
+      routes:
+        # Auth Service Routes
+        - id: auth-service # Identifiant du route auth-service
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/api/v1/auth/**,/api/v1/users/**
+
+        # ========================================
+        # Project Service - PUBLIC (Invitations Verify)
+        # ========================================
+        - id: project-service-public-verify
+          uri: lb://PROJECT-SERVICE
+          predicates:
+            - Path=/api/v1/projects/invitations/verify
+          filters:
+            - RemoveRequestHeader=Authorization
+
+        # ========================================
+        # Project Service - PROTECTED (Invitations Accept)
+        # ========================================
+        - id: project-service-invitations-accept
+          uri: lb://PROJECT-SERVICE
+          predicates:
+            - Path=/api/v1/projects/invitations/accept
+
+        # Project Service Routes
+        - id: project-service
+          uri: lb://PROJECT-SERVICE
+          predicates:
+            - Path=/api/v1/projects/**
+
+
+        # Task Service Routes
+        - id: task-service
+          uri: lb://TASK-SERVICE
+          predicates:
+            - Path=/api/v1/tasks/**
+
+
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: "http://localhost:4200"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+jwt:
+  secret: JKH87sdf98sdfKJH98SDFkjsdf87sdfJHGF98sd7f6sd8F7G65fd4s65df4s6df4
+
+server:
+  port: 8222
