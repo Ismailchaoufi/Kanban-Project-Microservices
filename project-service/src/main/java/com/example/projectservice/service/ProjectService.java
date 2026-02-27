@@ -19,6 +19,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -215,19 +216,30 @@ public class ProjectService {
         }
 
         List<ProjectMember> members = memberRepository.findByProjectId(projectId);
+        List<MemberResponse> responses = new ArrayList<>();
 
-        return members.stream()
-                .map(member -> {
-                    try {
-                        UserDTO user = authServiceClient.getUserById(member.getUserId(), userId, role);
-                        return mapToMemberResponse(member, user);
-                    } catch (Exception e) {
-                        log.error("Failed to fetch user details for userId: {}", member.getUserId());
-                        return null;
-                    }
-                })
-                .filter(memberResponse -> memberResponse != null)
-                .collect(Collectors.toList());
+        boolean ownerIncluded = false;
+
+        for (ProjectMember member : members) {
+            UserDTO user = fetchUserInternal(member.getUserId());
+            if (user == null) {
+                continue;
+            }
+
+            responses.add(mapToMemberResponse(member, user));
+            if (member.getUserId().equals(project.getOwnerId())) {
+                ownerIncluded = true;
+            }
+        }
+
+        if (!ownerIncluded) {
+            UserDTO ownerUser = fetchUserInternal(project.getOwnerId());
+            if (ownerUser != null) {
+                responses.add(0, mapOwnerToMemberResponse(project, ownerUser));
+            }
+        }
+
+        return responses;
     }
 
     /**
@@ -350,16 +362,24 @@ public class ProjectService {
     private ProjectResponse mapToProjectResponse(Project project, Long userId, String role) {
         List<MemberResponse> members = project.getMembers().stream()
                 .map(member -> {
-                    try {
-                        UserDTO user = authServiceClient.getUserById(member.getUserId(), userId, role);
-                        return mapToMemberResponse(member, user);
-                    } catch (Exception e) {
-                        log.error("Failed to fetch user details for userId: {}", member.getUserId(), e);
+                    UserDTO user = fetchUserInternal(member.getUserId());
+                    if (user == null) {
                         return null;
                     }
+                    return mapToMemberResponse(member, user);
                 })
                 .filter(memberResponse -> memberResponse != null)
                 .collect(Collectors.toList());
+
+        boolean ownerIncluded = members.stream()
+                .anyMatch(member -> member.getUserId().equals(project.getOwnerId()));
+
+        if (!ownerIncluded) {
+            UserDTO ownerUser = fetchUserInternal(project.getOwnerId());
+            if (ownerUser != null) {
+                members.add(0, mapOwnerToMemberResponse(project, ownerUser));
+            }
+        }
 
         return ProjectResponse.builder()
                 .id(project.getId())
@@ -373,6 +393,27 @@ public class ProjectService {
                 .members(members)
                 .createdAt(project.getCreatedAt())
                 .updatedAt(project.getUpdatedAt())
+                .build();
+    }
+
+    private UserDTO fetchUserInternal(Long userId) {
+        try {
+            return authServiceClient.getUserByIdInternal(userId);
+        } catch (Exception e) {
+            log.error("Failed to fetch user details for userId: {}", userId, e);
+            return null;
+        }
+    }
+
+    private MemberResponse mapOwnerToMemberResponse(Project project, UserDTO ownerUser) {
+        return MemberResponse.builder()
+                .id(null)
+                .userId(ownerUser.getId())
+                .firstName(ownerUser.getFirstName())
+                .lastName(ownerUser.getLastName())
+                .email(ownerUser.getEmail())
+                .avatarUrl(ownerUser.getAvatarUrl())
+                .joinedAt(project.getCreatedAt())
                 .build();
     }
 
