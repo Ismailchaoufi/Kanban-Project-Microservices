@@ -1,10 +1,7 @@
 package com.example.projectservice.services;
 
 import com.example.projectservice.client.AuthServiceClient;
-import com.example.projectservice.dto.InvitationRequest;
-import com.example.projectservice.dto.InvitationResponse;
-import com.example.projectservice.dto.MemberResponse;
-import com.example.projectservice.dto.UserDTO;
+import com.example.projectservice.dto.*;
 import com.example.projectservice.entity.Invitation;
 import com.example.projectservice.entity.InvitationStatus;
 import com.example.projectservice.entity.Project;
@@ -240,5 +237,61 @@ public class InvitationServiceTest {
         assertThatThrownBy(() -> invitationService.acceptInvitation("token-123", 99L))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("different email");
+    }
+
+    // getInvitationInfo
+    @Test
+    void getInvitationInfo_retourne_les_infos_de_linvitation() {
+        Invitation invitation = Invitation.builder()
+                .projectId(1L)
+                .email("bob@example.com")
+                .token("info-token")
+                .invitedBy(10L)
+                .status(InvitationStatus.PENDING)
+                .expiresAt(LocalDateTime.now().plusDays(3))
+                .build();
+
+        UserDTO inviter = new UserDTO();
+        inviter.setId(10L);
+        inviter.setFirstName("Alice");
+        inviter.setLastName("Martin");
+
+        when(invitationRepository.findByToken("info-token")).thenReturn(Optional.of(invitation));
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(sampleProject));
+        when(authServiceClient.getUserById(eq(10L), anyLong(), anyString())).thenReturn(inviter);
+
+        InvitationInfoResponse info = invitationService.getInvitationInfo("info-token");
+
+        assertThat(info.getEmail()).isEqualTo("bob@example.com");
+        assertThat(info.getProjectName()).isEqualTo("Projet Alpha");
+        assertThat(info.getInvitedBy()).isEqualTo("Alice Martin");
+        assertThat(info.isValid()).isTrue();
+        assertThat(info.isExpired()).isFalse();
+    }
+
+    @Test
+    void getInvitationInfo_marque_comme_invalide_si_expiree() {
+        Invitation invitation = Invitation.builder()
+                .projectId(1L)
+                .email("bob@example.com")
+                .token("old-token")
+                .invitedBy(10L)
+                .status(InvitationStatus.PENDING)
+                .expiresAt(LocalDateTime.now().minusDays(2)) // expirée
+                .build();
+
+        UserDTO inviter = new UserDTO();
+        inviter.setId(10L);
+        inviter.setFirstName("Alice");
+        inviter.setLastName("Martin");
+
+        when(invitationRepository.findByToken("old-token")).thenReturn(Optional.of(invitation));
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(sampleProject));
+        when(authServiceClient.getUserById(eq(10L), anyLong(), anyString())).thenReturn(inviter);
+
+        InvitationInfoResponse info = invitationService.getInvitationInfo("old-token");
+
+        assertThat(info.isExpired()).isTrue();
+        assertThat(info.isValid()).isFalse();
     }
 }
