@@ -203,5 +203,42 @@ public class InvitationServiceTest {
         assertThat(invitation.getStatus()).isEqualTo(InvitationStatus.EXPIRED);
     }
 
+    @Test
+    void acceptInvitation_refuse_si_invitation_deja_acceptee() {
+        Invitation invitation = Invitation.builder()
+                .projectId(1L)
+                .email("bob@example.com")
+                .token("used-token")
+                .status(InvitationStatus.ACCEPTED) // déjà utilisée
+                .expiresAt(LocalDateTime.now().plusDays(3))
+                .build();
 
+        when(invitationRepository.findByToken("used-token")).thenReturn(Optional.of(invitation));
+
+        assertThatThrownBy(() -> invitationService.acceptInvitation("used-token", 20L))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("no longer valid");
+    }
+
+    @Test
+    void acceptInvitation_refuse_si_email_ne_correspond_pas() {
+        Invitation invitation = Invitation.builder()
+                .projectId(1L)
+                .email("bob@example.com")
+                .token("token-123")
+                .status(InvitationStatus.PENDING)
+                .expiresAt(LocalDateTime.now().plusDays(3))
+                .build();
+
+        UserDTO autreUser = new UserDTO();
+        autreUser.setId(99L);
+        autreUser.setEmail("autre@example.com"); // email différent
+
+        when(invitationRepository.findByToken("token-123")).thenReturn(Optional.of(invitation));
+        when(authServiceClient.getUserByIdInternal(99L)).thenReturn(autreUser);
+
+        assertThatThrownBy(() -> invitationService.acceptInvitation("token-123", 99L))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("different email");
+    }
 }
