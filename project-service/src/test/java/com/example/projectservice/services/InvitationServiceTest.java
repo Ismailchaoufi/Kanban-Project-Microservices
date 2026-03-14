@@ -10,6 +10,7 @@ import com.example.projectservice.entity.InvitationStatus;
 import com.example.projectservice.entity.Project;
 import com.example.projectservice.exception.BadRequestException;
 import com.example.projectservice.exception.ForbiddenException;
+import com.example.projectservice.exception.ResourceNotFoundException;
 import com.example.projectservice.repository.InvitationRepository;
 import com.example.projectservice.repository.ProjectRepository;
 import com.example.projectservice.service.EmailService;
@@ -172,6 +173,34 @@ public class InvitationServiceTest {
 
         assertThat(invitation.getStatus()).isEqualTo(InvitationStatus.ACCEPTED);
         verify(invitationRepository).save(invitation);
+    }
+
+    @Test
+    void acceptInvitation_refuse_token_invalide() {
+        when(invitationRepository.findByToken("mauvais-token")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> invitationService.acceptInvitation("mauvais-token", 20L))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void acceptInvitation_refuse_si_invitation_expiree() {
+        Invitation invitation = Invitation.builder()
+                .projectId(1L)
+                .email("bob@example.com")
+                .token("expired-token")
+                .status(InvitationStatus.PENDING)
+                .expiresAt(LocalDateTime.now().minusDays(1)) // expirée hier
+                .build();
+
+        when(invitationRepository.findByToken("expired-token")).thenReturn(Optional.of(invitation));
+
+        assertThatThrownBy(() -> invitationService.acceptInvitation("expired-token", 20L))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("expired");
+
+        // Le statut doit être mis à jour en EXPIRED
+        assertThat(invitation.getStatus()).isEqualTo(InvitationStatus.EXPIRED);
     }
 
 
