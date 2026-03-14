@@ -8,6 +8,8 @@ import com.example.projectservice.dto.UserDTO;
 import com.example.projectservice.entity.Invitation;
 import com.example.projectservice.entity.InvitationStatus;
 import com.example.projectservice.entity.Project;
+import com.example.projectservice.exception.BadRequestException;
+import com.example.projectservice.exception.ForbiddenException;
 import com.example.projectservice.repository.InvitationRepository;
 import com.example.projectservice.repository.ProjectRepository;
 import com.example.projectservice.service.EmailService;
@@ -24,6 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -104,4 +107,46 @@ public class InvitationServiceTest {
         verify(invitationRepository).save(any(Invitation.class));
         verify(projectService, never()).addMemberFromInvitation(anyLong(), anyLong());
     }
+
+    @Test
+    void inviteMember_refuse_si_pas_owner_ni_admin() {
+        InvitationRequest request = new InvitationRequest();
+        request.setEmail("quelquun@example.com");
+
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(sampleProject));
+
+        // userId=99 n'est pas owner (10L)
+        assertThatThrownBy(() -> invitationService.inviteMember(1L, request, 99L, "USER"))
+                .isInstanceOf(ForbiddenException.class);
+
+        verify(invitationRepository, never()).save(any());
+    }
+
+    @Test
+    void inviteMember_refuse_si_email_invalide() {
+        InvitationRequest request = new InvitationRequest();
+        request.setEmail("pas-un-email");
+
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(sampleProject));
+
+        assertThatThrownBy(() -> invitationService.inviteMember(1L, request, 10L, "USER"))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Invalid email");
+    }
+
+    @Test
+    void inviteMember_refuse_si_invitation_deja_envoyee() {
+        InvitationRequest request = new InvitationRequest();
+        request.setEmail("bob@example.com");
+
+        when(projectRepository.findById(1L)).thenReturn(Optional.of(sampleProject));
+        when(invitationRepository.existsByProjectIdAndEmailAndStatus(1L, "bob@example.com", InvitationStatus.PENDING))
+                .thenReturn(true);
+
+        assertThatThrownBy(() -> invitationService.inviteMember(1L, request, 10L, "USER"))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("already sent");
+    }
+
+
 }
