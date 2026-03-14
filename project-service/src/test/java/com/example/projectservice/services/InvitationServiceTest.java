@@ -23,6 +23,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -146,6 +147,31 @@ public class InvitationServiceTest {
         assertThatThrownBy(() -> invitationService.inviteMember(1L, request, 10L, "USER"))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("already sent");
+    }
+
+    // acceptInvitation
+    @Test
+    void acceptInvitation_fonctionne_avec_un_token_valide() {
+        Invitation invitation = Invitation.builder()
+                .projectId(1L)
+                .email("bob@example.com")
+                .token("valid-token")
+                .status(InvitationStatus.PENDING)
+                .expiresAt(LocalDateTime.now().plusDays(3))
+                .build();
+
+        UserDTO user = new UserDTO();
+        user.setId(20L);
+        user.setEmail("bob@example.com");
+
+        when(invitationRepository.findByToken("valid-token")).thenReturn(Optional.of(invitation));
+        when(authServiceClient.getUserByIdInternal(20L)).thenReturn(user);
+        when(projectService.addMemberFromInvitation(1L, 20L)).thenReturn(mock(MemberResponse.class));
+
+        invitationService.acceptInvitation("valid-token", 20L);
+
+        assertThat(invitation.getStatus()).isEqualTo(InvitationStatus.ACCEPTED);
+        verify(invitationRepository).save(invitation);
     }
 
 
