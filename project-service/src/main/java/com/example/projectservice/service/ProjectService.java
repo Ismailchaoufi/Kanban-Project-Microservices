@@ -275,7 +275,7 @@ public class ProjectService {
      * Cette méthode est INTERNE et ne doit être appelée que par InvitationService
      */
     @Transactional
-    protected MemberResponse addMemberFromInvitation(Long projectId, Long userId) {
+    public MemberResponse addMemberFromInvitation(Long projectId, Long userId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
